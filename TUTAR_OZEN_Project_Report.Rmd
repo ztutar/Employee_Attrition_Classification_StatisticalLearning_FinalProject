@@ -9,8 +9,7 @@ toc: true
 toc-own-page: true
 number_sections: true
 df_print: kable
-fontsize: 12pt
-fontfamily: libertine
+fontsize: 11pt
 lang: en-GB
 titlepage: true
 titlepage-background: "img/unipdbg.pdf"
@@ -39,7 +38,7 @@ output:
   pdf_document:
     template: "template/eisvogel.tex"
     citation_package: natbib
-    keep_tex: true
+    keep_tex: false
     fig_caption: true
     latex_engine: pdflatex
 ---
@@ -47,13 +46,152 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, 
                       warning = FALSE, message = FALSE,
+                      tidy.opts = list(width.cutoff = 55), 
                       tidy = TRUE, comment = '',
                       fig.path='figs/',
                       cache = TRUE, cache.path = '_cache/')
 ```
 
-## 1. Introduction to Dataset
+# Introduction to Dataset
 
-The aim of this project is to develop two predictive models to determine employee attrition of a company. The dataset[^dataset] used for this project is a simulated dataset designed for the analysis and prediction of employee attrition/ It contains detailed information about various aspects of an employee's profile, including demographics, job-related features, and personal circumstances.
+The aim of this project is to develop two predictive models to determine employee attrition of a company. The dataset[^1] used for this project is a simulated dataset designed for the analysis and prediction of employee attrition. It contains detailed information about various aspects of an employee's profile, including demographics, job-related features, and personal circumstances.The dataset contains 74,498 samples. Each record includes a unique Employee ID and features that influence employee attrition. The goal is to understand the factors contributing to attrition and develop predictive models to identify at-risk employees.
 
-[^dataset]: https://www.kaggle.com/datasets/stealthtechnologies/employee-attrition-dataset/data
+[^1]: <https://www.kaggle.com/datasets/stealthtechnologies/employee-attrition-dataset/data>
+
+The dataset is already splitted into train and test but in order to better understand the data, it is crucial to analyse the dataset as a whole.
+
+```{r import_data}
+
+# import the train and test datasets
+data_train <- read.csv("data/train.csv")
+data_test <- read.csv("data/test.csv")
+
+# merge the datasets
+data <- rbind(data_train, data_test)
+attach(data)
+```
+
+## Description of the Features
+
+The features of the dataset are presented below:
+
+-   **Employee ID:** A unique identifier assigned to each employee.
+
+-   **Age:** The age of the employee, ranging from 18 to 60 years.
+
+-   **Gender:** The gender of the employee
+
+-   **Years at Company:** The number of years the employee has been working at the company.
+
+-   **Monthly Income:** The monthly salary of the employee, in dollars.
+
+-   **Job Role:** The department or role the employee works in, encoded into categories such as Finance, Healthcare, Technology, Education, and Media.
+
+-   **Work-Life Balance:** The employee's perceived balance between work and personal life, (Poor, Below Average, Good, Excellent)
+
+-   **Job Satisfaction:** The employee's satisfaction with their job: (Very Low, Low, Medium, High)
+
+-   **Performance Rating:** The employee's performance rating: (Low, Below Average, Average, High)
+
+-   **Number of Promotions:** The total number of promotions the employee has received.
+
+-   **Distance from Home:** The distance between the employee's home and workplace, in miles.
+
+-   **Education Level:** The highest education level attained by the employee: (High School, Associate Degree, Bachelor’s Degree, Master’s Degree, PhD)
+
+-   **Marital Status:** The marital status of the employee: (Divorced, Married, Single)
+
+-   **Job Level:** The job level of the employee: (Entry, Mid, Senior)
+
+-   **Company Size:** The size of the company the employee works for: (Small,Medium,Large)
+
+-   **Company Tenure:** The total number of years the employee has been working in the industry.
+
+-   **Remote Work:** Whether the employee works remotely: (Yes or No)
+
+-   **Leadership Opportunities:** Whether the employee has leadership opportunities: (Yes or No)
+
+-   **Innovation Opportunities:** Whether the employee has opportunities for innovation: (Yes or No)
+
+-   **Company Reputation:** The employee's perception of the company's reputation: (Very Poor, Poor,Good, Excellent)
+
+-   **Employee Recognition:** The level of recognition the employee receives:(Very Low, Low, Medium, High)
+
+-   **Attrition:** Whether the employee has left the company, encoded as 0 (stayed) and 1 (Left).
+
+# Data Analysis
+
+In order to develop predictive models, first it is necessary to perform exploratory data analysis (EDA) and modify the format of the data if necessary.
+
+```{r EDA}
+# first column contains Employee IDs, so not necessary for summary
+summary(data[,-1], )
+```
+
+## Data Preprocessing
+
+To prepare the dataset for further analysis, several data preprocessing steps are performed:
+
+1.  Converting categorical features to factors
+2.  Removing features
+3.  Handling na values
+4.  etc...
+
+```{r}
+#EDA
+
+```
+
+### Outliers
+
+```{r}
+#EDA
+
+```
+
+### Visualization
+
+```{r}
+#EDA
+
+```
+
+As a result of the analysis, the following observations were made regarding the characteristics of the data:
+
+## Features vs. Target
+
+### Categorical Features vs. Target
+
+### Numerical Features vs. Target
+
+## Correlation Matrix
+
+### Partial Correlation Matrices
+
+# Data Preparation
+
+## Categorical to Numerical Feature Conversion
+
+## Train-Test-Split
+
+## Feature and Output Samples
+
+# Predictive Classification Models
+
+## Logistic Regression
+
+### Basic Logistic Classifier
+
+### Logistic Regression with Backward Variable Selection
+
+### Logistic Regression with Shrinkage Method
+
+### ROC Curve & Comparison of Logistic Classifiers
+
+## Another Classification Model
+
+# Model Results
+
+## Performance Metrics and Confusion Matrix
+
+# Conclusion

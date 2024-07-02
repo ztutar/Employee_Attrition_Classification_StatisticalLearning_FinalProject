@@ -287,8 +287,8 @@ $if(footnotes-pretty)$
 \usepackage[hang,flushmargin,bottom,multiple]{footmisc}
 \setlength{\footnotemargin}{0.8em} % set space between footnote nr and text
 \setlength{\footnotesep}{\baselineskip} % set space between multiple footnotes
-\setlength{\skip\footins}{0.3cm} % set space between page content and footnote
-\setlength{\footskip}{0.9cm} % set space between footnote and page bottom
+\setlength{\skip\footins}{0.2cm} % set space between page content and footnote
+\setlength{\footskip}{0.3cm} % set space between footnote and page bottom
 $endif$
 $if(geometry)$
 $if(beamer)$
@@ -299,7 +299,7 @@ $endif$
 $else$
 $if(beamer)$
 $else$
-\usepackage[margin=2.5cm,includehead=true,includefoot=true,centering,$for(geometry)$$geometry$$sep$,$endfor$]{geometry}
+\usepackage[margin=2.0cm,includehead=true,includefoot=true,centering,$for(geometry)$$geometry$$sep$,$endfor$]{geometry}
 $endif$
 $endif$
 $if(titlepage-logo)$
@@ -612,7 +612,7 @@ $if(titlepage-background)$
 $endif$
 $if(geometry)$
 $else$
-\usepackage[margin=2.5cm,includehead=true,includefoot=true,centering]{geometry}
+\usepackage[margin=2.0cm,includehead=true,includefoot=true,centering]{geometry}
 $endif$
 $endif$
 
@@ -658,7 +658,7 @@ $endif$
 \ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
   $if(fontfamily)$
   $else$
-  \usepackage[default]{sourcesanspro}
+  %\usepackage[default]{sourcesanspro}
   \usepackage{sourcecodepro}
   $endif$
 \else % if not pdftex
