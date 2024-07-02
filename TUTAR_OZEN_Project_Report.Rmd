@@ -2,21 +2,15 @@
 title: "Statistical Learning Final Project"
 subtitle: "Employee Attrition Classification"
 
-author:
-- name: Zeynep TUTAR - 2106038
-- name: Aysenur Oya ÖZEN - 0000000
+author: [Zeynep TUTAR - 2106038, Aysenur Oya ÖZEN - 0000000]
 
 date: "09-07-2024"
-
 toc: true
 toc-own-page: true
 number_sections: true
-citation_package: natbib
-keep_tex: true
-fig_caption: true
-latex_engine: pdflatex
 df_print: kable
-font: 12pt
+fontsize: 12pt
+fontfamily: libertine
 lang: en-GB
 titlepage: true
 titlepage-background: "img/unipdbg.pdf"
@@ -27,32 +21,39 @@ footer-center: "Page \\thepage"
 footer-right: "\\hspace{1cm}"
 hyperrefoptions:
 - linktoc=all
+biblio-style: apsr
+colorlinks: true
+
+header-includes:
+   - \usepackage{setspace}
+   - \newpage
+   - \usepackage{hyperref}
+   - \usepackage{multirow}
+   - \usepackage{amsmath}
+   - \usepackage{algorithm}
+   - \usepackage{algorithmic}
+   - \usepackage{authblk}
+   - \usepackage{graphicx}
 
 output:
   pdf_document:
     template: "template/eisvogel.tex"
+    citation_package: natbib
+    keep_tex: true
+    fig_caption: true
+    latex_engine: pdflatex
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE, tidy = TRUE, cache = TRUE, message = FALSE, comment = '')
+knitr::opts_chunk$set(echo = TRUE, 
+                      warning = FALSE, message = FALSE,
+                      tidy = TRUE, comment = '',
+                      fig.path='figs/',
+                      cache = TRUE, cache.path = '_cache/')
 ```
 
-## R Markdown
+## 1. Introduction to Dataset
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+The aim of this project is to develop two predictive models to determine employee attrition of a company. The dataset[^dataset] used for this project is a simulated dataset designed for the analysis and prediction of employee attrition/ It contains detailed information about various aspects of an employee's profile, including demographics, job-related features, and personal circumstances.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+[^dataset]: https://www.kaggle.com/datasets/stealthtechnologies/employee-attrition-dataset/data

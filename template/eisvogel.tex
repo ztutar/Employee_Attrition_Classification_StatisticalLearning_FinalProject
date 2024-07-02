@@ -278,9 +278,9 @@ $if(verbatim-in-note)$
 $endif$
 \usepackage{xcolor}
 \definecolor{UniPDColor}{RGB}{155, 0, 20}
-\definecolor{default-linkcolor}{HTML}{A50000}
-\definecolor{default-filecolor}{HTML}{A50000}
-\definecolor{default-citecolor}{HTML}{4077C0}
+\definecolor{default-linkcolor}{RGB}{155, 0, 20}
+\definecolor{default-filecolor}{RGB}{155, 0, 20}
+\definecolor{default-citecolor}{RGB}{155, 0, 20}
 \definecolor{default-urlcolor}{HTML}{4077C0}
 $if(footnotes-pretty)$
 % load footmisc in order to customize footnotes (footmisc has to be loaded before hyperref, cf. https://tex.stackexchange.com/a/169124/144087)
@@ -508,6 +508,7 @@ $endif$
 $if(natbib)$
 \usepackage[$natbiboptions$]{natbib}
 \bibliographystyle{$if(biblio-style)$$biblio-style$$else$plainnat$endif$}
+\usepackage[strings]{underscore} % protect underscores in most circumstances
 $endif$
 $if(biblatex)$
 \usepackage[$if(biblio-style)$style=$biblio-style$,$endif$$for(biblatexoptions)$$biblatexoptions$$sep$,$endfor$]{biblatex}
@@ -629,7 +630,8 @@ $endif$
 %
 % captions
 %
-\definecolor{caption-color}{HTML}{777777}
+\definecolor{caption-color}{RGB}{155, 0, 20}
+%{HTML}{777777}
 $if(beamer)$
 $else$
 \usepackage[font={stretch=1.2}, textfont={color=caption-color}, position=top, skip=4mm, labelfont=bf, singlelinecheck=false, justification=$if(caption-justification)$$caption-justification$$else$raggedright$endif$]{caption}
@@ -639,8 +641,8 @@ $endif$
 %
 % blockquote
 %
-\definecolor{blockquote-border}{RGB}{221,221,221}
-\definecolor{blockquote-text}{RGB}{119,119,119}
+\definecolor{blockquote-border}{RGB}{155, 0, 20}
+\definecolor{blockquote-text}{RGB}{155, 0, 20}
 \usepackage{mdframed}
 \newmdenv[rightline=false,bottomline=false,topline=false,linewidth=3pt,linecolor=blockquote-border,skipabove=\parskip]{customblockquote}
 \renewenvironment{quote}{\begin{customblockquote}\list{}{\rightmargin=0em\leftmargin=0em}%
@@ -758,7 +760,7 @@ $if(listings)$
 %
 \definecolor{listing-background}{HTML}{F7F7F7}
 \definecolor{listing-rule}{HTML}{B3B2B3}
-\definecolor{listing-numbers}{HTML}{B3B2B3}
+\definecolor{listing-numbers}{RGB}{155, 0, 20} %{HTML}{B3B2B3}
 \definecolor{listing-text-color}{HTML}{000000}
 \definecolor{listing-keyword}{HTML}{435489}
 \definecolor{listing-keyword-2}{HTML}{1284CA} % additional keywords
@@ -877,19 +879,23 @@ $endif$
 %
 $if(beamer)$
 $else$
+
+\definecolor{headfoot-color}{RGB}{134, 134, 134}
 $if(disable-header-and-footer)$
 $else$
 \usepackage[headsepline,footsepline]{scrlayer-scrpage}
 
 \newpairofpagestyles{eisvogel-header-footer}{
   \clearpairofpagestyles
-  \ihead*{$if(header-left)$$header-left$$else$$subtitle$$endif$}
-  \chead*{$if(header-center)$$header-center$$else$$endif$}
-  \ohead*{$if(header-right)$$header-right$$else$$title$$endif$}
-  \ifoot*{$if(footer-left)$$footer-left$$else$$for(author)$$author$$sep$, $endfor$$endif$}
-  \cfoot*{$if(footer-center)$$footer-center$$else$\thepage$endif$}
-  \ofoot*{$if(footer-right)$$footer-right$$else$$endif$}
+  \ihead*{$if(header-left)$\color{headfoot-color}$header-left$$else$\color{headfoot-color}$subtitle$$endif$}
+  \chead*{$if(header-center)$\color{headfoot-color}$header-center$$else$$endif$}
+  \ohead*{$if(header-right)$\color{headfoot-color}$header-right$$else$$endif$}
+  \ifoot*{$if(footer-left)$\color{headfoot-color}$footer-left$$else$$endif$}
+  \cfoot*{$if(footer-center)$\color{headfoot-color}$footer-center$$else$\color{headfoot-color}\thepage$endif$}
+  \ofoot*{$if(footer-right)$\color{headfoot-color}$footer-right$$else$$endif$}
   \addtokomafont{pageheadfoot}{\upshape}
+  \addtokomafont{headsepline}{\color{headfoot-color}}
+  \addtokomafont{footsepline}{\color{headfoot-color}}
 }
 \pagestyle{eisvogel-header-footer}
 
@@ -905,7 +911,7 @@ color=black,
 opacity=$if(page-background-opacity)$$page-background-opacity$$else$0.2$endif$,
 angle=0,
 contents={%
-  \includegraphics[width=\paperwidth,height=\paperheight]{$page-background$}
+  \includegraphics[width=\paperwidth]{$page-background$}
   }%
 }
 $endif$
@@ -935,7 +941,7 @@ $if(titlepage-color)$
 \newpagecolor{titlepage-color}\afterpage{\restorepagecolor}
 $endif$
 $if(titlepage-background)$
-\tikz[remember picture,overlay] \node[inner sep=0pt] at (current page.center){\includegraphics[width=\paperwidth,height=\paperheight]{$titlepage-background$}};
+\tikz[remember picture,overlay] \node[inner sep=0pt] at (current page.center){\includegraphics[width=\paperwidth]{$titlepage-background$}};
 $endif$
 %\newcommand{\colorRule}[3][black]{\textcolor[HTML]{#1}{\rule{#2}{#3}}}
 \begin{center}
@@ -961,7 +967,7 @@ $if(titlepage-background)$
 
   % title
   \vspace{3ex}
-  \huge\textbf{$subtitle$} \\
+  \huge\textbf{\color{UniPDColor}$subtitle$} \\
   \vspace{\stretch{2.5}}
 
   % authors, advisors etc...
