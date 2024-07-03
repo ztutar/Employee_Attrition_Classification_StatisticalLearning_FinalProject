@@ -23,6 +23,10 @@ hyperrefoptions:
 biblio-style: apsr
 colorlinks: true
 
+editor_options: 
+  markdown: 
+    wrap: 72
+
 header-includes:
    - \usepackage{setspace}
    - \newpage
@@ -33,6 +37,7 @@ header-includes:
    - \usepackage{algorithmic}
    - \usepackage{authblk}
    - \usepackage{graphicx}
+
 
 output:
   pdf_document:
@@ -49,7 +54,7 @@ knitr::opts_chunk$set(echo = TRUE,
                       tidy.opts = list(width.cutoff = 55), 
                       tidy = TRUE, comment = '',
                       fig.path='figs/',
-                      cache = TRUE, cache.path = '_cache/')
+                      cache = TRUE)
 ```
 
 # Introduction to Dataset
@@ -63,8 +68,8 @@ The dataset is already splitted into train and test but in order to better under
 ```{r import_data}
 
 # import the train and test datasets
-data_train <- read.csv("data/train.csv")
-data_test <- read.csv("data/test.csv")
+data_train <- read.csv("data/train.csv", stringsAsFactors=TRUE)
+data_test <- read.csv("data/test.csv", stringsAsFactors = TRUE)
 
 # merge the datasets
 data <- rbind(data_train, data_test)
@@ -125,7 +130,19 @@ In order to develop predictive models, first it is necessary to perform explorat
 
 ```{r EDA}
 # first column contains Employee IDs, so not necessary for summary
-summary(data[,-1], )
+# Descriptive statistics of DataFrame
+summary(data[,-1])
+
+# Columns in DataFrame
+colnames(data[,-1])
+
+# Data types of columns
+str(data[,-1])
+
+# Number of unique values in each column
+unique_values <- apply(data, 2, function(x) length(unique(x)))
+print(unique_values)
+
 ```
 
 ## Data Preprocessing
@@ -170,13 +187,77 @@ As a result of the analysis, the following observations were made regarding the 
 
 # Data Preparation
 
-## Categorical to Numerical Feature Conversion
+After completing the data analysis steps, it is necessary to prepare the data for model development.  
+
+## Handling Categorical Features
+
+In order to use the categorical features in the model, we need to convert categorical features to numeric representations by expanding factors to a set of dummy variables. In order to avoid multicollinearity, one dummy variable will be dropped.
+
+```{r dummy}
+
+# Create dummy variables for categorical data
+data_dummy <- model.matrix(~ ., data = data) 
+
+# Convert the resulting matrix back to a data frame
+data_dummy <- as.data.frame(data_dummy[,-1])  # -1 to remove the intercept column
+
+# Check for column names
+tail(colnames(data_dummy), 10)
+
+```
+As expected for each categorical variable a new dummy column is created and one column for each category is dropped to avoid "dummy variable trap".
 
 ## Train-Test-Split
 
-## Feature and Output Samples
+Before splitting the data into training and test, first features and target should be defined.
+
+```{r x_y_split}
+# Splitting data into features and target:
+X <- data_dummy[, !(colnames(data_dummy) %in% c("Employee.ID", "AttritionStayed"))]
+
+y <- data_dummy$AttritionStayed
+```
+
+Now, we can split the dataset for modelling.
+
+```{r train_test_split}
+set.seed(42)
+
+trainIndex <- sample(1:nrow(X), 0.8*nrow(X))
+
+# 80% of data is used for training
+X.train <- X[trainIndex,]
+y.train <- y[trainIndex]
+
+# 20% of data is used for testing
+X.test <- X[-trainIndex,]
+y.test <- y[-trainIndex]
+```
+
+Before moving to modelling step, it is beneficial to check the dimensions and balance of the datasets.
+
+```{r sanity_check}
+# Number of samples in train data
+dim(X.train)
+train.size <- dim(X.train)[1]
+
+# Number of samples in test data
+dim(X.test)
+test.size <- dim(X.test)[1]
+
+# Proportion of stayed employees for train data
+prop.table(table(y.train))
+
+# Proportion of stayed employees for test data
+prop.table(table(y.test))
+```
+We can observe that the train and test datasets are balanced within themselves. Also  the train data is representative of test data.
 
 # Predictive Classification Models
+
+Predictive classification models are a type of machine learning algorithm used to predict the category or class label of new, unseen instances based on historical data. These models are trained using a labeled dataset where the input features (independent variables) are associated with known class labels (dependent variable). The goal of the model is to learn the relationship between the features and the class labels so that it can accurately classify new data points into one of the predefined categories. 
+
+In this project we aim to find the risk of an employee leaving the company (class 0) and the factors affecting employee retention. So we will develop several classification models and examine their performances.
 
 ## Logistic Regression
 
