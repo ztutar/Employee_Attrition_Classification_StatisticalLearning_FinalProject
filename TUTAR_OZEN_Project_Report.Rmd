@@ -19,13 +19,13 @@ footer-left: "\\hspace{1cm}"
 footer-center: "Page \\thepage"
 footer-right: "\\hspace{1cm}"
 hyperrefoptions:
-- linktoc=all
+  - linktoc=all
 biblio-style: apsr
 colorlinks: true
 
 editor_options: 
   markdown: 
-    wrap: 72
+    wrap: 55
 
 header-includes:
    - \usepackage{setspace}
@@ -37,6 +37,9 @@ header-includes:
    - \usepackage{algorithmic}
    - \usepackage{authblk}
    - \usepackage{graphicx}
+   - \usepackage{fancyvrb}
+   - \RecustomVerbatimEnvironment{Verbatim}{BVerbatim}{breaklines=true,breakanywhere=true}
+
 
 
 output:
@@ -45,7 +48,8 @@ output:
     citation_package: natbib
     keep_tex: false
     fig_caption: true
-    latex_engine: pdflatex
+    latex_engine: xelatex
+
 ---
 
 ```{r setup, include=FALSE}
@@ -54,16 +58,30 @@ knitr::opts_chunk$set(echo = TRUE,
                       tidy.opts = list(width.cutoff = 55), 
                       tidy = TRUE, comment = '',
                       fig.path='figs/',
-                      cache = TRUE)
+                      cache = TRUE, cache.path = '_cache/')
 ```
 
 # Introduction to Dataset
 
-The aim of this project is to develop two predictive models to determine employee attrition of a company. The dataset[^1] used for this project is a simulated dataset designed for the analysis and prediction of employee attrition. It contains detailed information about various aspects of an employee's profile, including demographics, job-related features, and personal circumstances.The dataset contains 74,498 samples. Each record includes a unique Employee ID and features that influence employee attrition. The goal is to understand the factors contributing to attrition and develop predictive models to identify at-risk employees.
+The aim of this project is to develop two predictive
+models to determine employee attrition of a company.
+The dataset[^1] used for this project is a simulated
+dataset designed for the analysis and prediction of
+employee attrition. It contains detailed information
+about various aspects of an employee's profile,
+including demographics, job-related features, and
+personal circumstances.The dataset contains 74,498
+samples. Each record includes a unique Employee ID and
+features that influence employee attrition. The goal is
+to understand the factors contributing to attrition and
+develop predictive models to identify at-risk
+employees.
 
 [^1]: <https://www.kaggle.com/datasets/stealthtechnologies/employee-attrition-dataset/data>
 
-The dataset is already splitted into train and test but in order to better understand the data, it is crucial to analyse the dataset as a whole.
+The dataset is already splitted into train and test but
+in order to better understand the data, it is crucial
+to analyse the dataset as a whole.
 
 ```{r import_data}
 
@@ -80,53 +98,80 @@ attach(data)
 
 The features of the dataset are presented below:
 
--   **Employee ID:** A unique identifier assigned to each employee.
+-   **Employee ID:** A unique identifier assigned to
+    each employee.
 
--   **Age:** The age of the employee, ranging from 18 to 60 years.
+-   **Age:** The age of the employee, ranging from 18
+    to 60 years.
 
 -   **Gender:** The gender of the employee
 
--   **Years at Company:** The number of years the employee has been working at the company.
+-   **Years at Company:** The number of years the
+    employee has been working at the company.
 
--   **Monthly Income:** The monthly salary of the employee, in dollars.
+-   **Monthly Income:** The monthly salary of the
+    employee, in dollars.
 
--   **Job Role:** The department or role the employee works in, encoded into categories such as Finance, Healthcare, Technology, Education, and Media.
+-   **Job Role:** The department or role the employee
+    works in, encoded into categories such as Finance,
+    Healthcare, Technology, Education, and Media.
 
--   **Work-Life Balance:** The employee's perceived balance between work and personal life, (Poor, Below Average, Good, Excellent)
+-   **Work-Life Balance:** The employee's perceived
+    balance between work and personal life, (Poor,
+    Below Average, Good, Excellent)
 
--   **Job Satisfaction:** The employee's satisfaction with their job: (Very Low, Low, Medium, High)
+-   **Job Satisfaction:** The employee's satisfaction
+    with their job: (Very Low, Low, Medium, High)
 
--   **Performance Rating:** The employee's performance rating: (Low, Below Average, Average, High)
+-   **Performance Rating:** The employee's performance
+    rating: (Low, Below Average, Average, High)
 
--   **Number of Promotions:** The total number of promotions the employee has received.
+-   **Number of Promotions:** The total number of
+    promotions the employee has received.
 
--   **Distance from Home:** The distance between the employee's home and workplace, in miles.
+-   **Distance from Home:** The distance between the
+    employee's home and workplace, in miles.
 
--   **Education Level:** The highest education level attained by the employee: (High School, Associate Degree, Bachelor’s Degree, Master’s Degree, PhD)
+-   **Education Level:** The highest education level
+    attained by the employee: (High School, Associate
+    Degree, Bachelor’s Degree, Master’s Degree, PhD)
 
--   **Marital Status:** The marital status of the employee: (Divorced, Married, Single)
+-   **Marital Status:** The marital status of the
+    employee: (Divorced, Married, Single)
 
--   **Job Level:** The job level of the employee: (Entry, Mid, Senior)
+-   **Job Level:** The job level of the employee:
+    (Entry, Mid, Senior)
 
--   **Company Size:** The size of the company the employee works for: (Small,Medium,Large)
+-   **Company Size:** The size of the company the
+    employee works for: (Small,Medium,Large)
 
--   **Company Tenure:** The total number of years the employee has been working in the industry.
+-   **Company Tenure:** The total number of years the
+    employee has been working in the industry.
 
--   **Remote Work:** Whether the employee works remotely: (Yes or No)
+-   **Remote Work:** Whether the employee works
+    remotely: (Yes or No)
 
--   **Leadership Opportunities:** Whether the employee has leadership opportunities: (Yes or No)
+-   **Leadership Opportunities:** Whether the employee
+    has leadership opportunities: (Yes or No)
 
--   **Innovation Opportunities:** Whether the employee has opportunities for innovation: (Yes or No)
+-   **Innovation Opportunities:** Whether the employee
+    has opportunities for innovation: (Yes or No)
 
--   **Company Reputation:** The employee's perception of the company's reputation: (Very Poor, Poor,Good, Excellent)
+-   **Company Reputation:** The employee's perception
+    of the company's reputation: (Very Poor, Poor,Good,
+    Excellent)
 
--   **Employee Recognition:** The level of recognition the employee receives:(Very Low, Low, Medium, High)
+-   **Employee Recognition:** The level of recognition
+    the employee receives:(Very Low, Low, Medium, High)
 
--   **Attrition:** Whether the employee has left the company, encoded as 0 (stayed) and 1 (Left).
+-   **Attrition:** Whether the employee has left the
+    company, encoded as 0 (stayed) and 1 (Left).
 
 # Data Analysis
 
-In order to develop predictive models, first it is necessary to perform exploratory data analysis (EDA) and modify the format of the data if necessary.
+In order to develop predictive models, first it is
+necessary to perform exploratory data analysis (EDA)
+and modify the format of the data if necessary.
 
 ```{r EDA}
 # first column contains Employee IDs, so not necessary for summary
@@ -147,7 +192,8 @@ print(unique_values)
 
 ## Data Preprocessing
 
-To prepare the dataset for further analysis, several data preprocessing steps are performed:
+To prepare the dataset for further analysis, several
+data preprocessing steps are performed:
 
 1.  Converting categorical features to factors
 2.  Removing features
@@ -173,7 +219,8 @@ To prepare the dataset for further analysis, several data preprocessing steps ar
 
 ```
 
-As a result of the analysis, the following observations were made regarding the characteristics of the data:
+As a result of the analysis, the following observations
+were made regarding the characteristics of the data:
 
 ## Features vs. Target
 
@@ -187,11 +234,16 @@ As a result of the analysis, the following observations were made regarding the 
 
 # Data Preparation
 
-After completing the data analysis steps, it is necessary to prepare the data for model development.  
+After completing the data analysis steps, it is
+necessary to prepare the data for model development.
 
 ## Handling Categorical Features
 
-In order to use the categorical features in the model, we need to convert categorical features to numeric representations by expanding factors to a set of dummy variables. In order to avoid multicollinearity, one dummy variable will be dropped.
+In order to use the categorical features in the model,
+we need to convert categorical features to numeric
+representations by expanding factors to a set of dummy
+variables. In order to avoid multicollinearity, one
+dummy variable will be dropped.
 
 ```{r dummy}
 
@@ -205,11 +257,15 @@ data_dummy <- as.data.frame(data_dummy[,-1])  # -1 to remove the intercept colum
 tail(colnames(data_dummy), 10)
 
 ```
-As expected for each categorical variable a new dummy column is created and one column for each category is dropped to avoid "dummy variable trap".
+
+As expected for each categorical variable a new dummy
+column is created and one column for each category is
+dropped to avoid "dummy variable trap".
 
 ## Train-Test-Split
 
-Before splitting the data into training and test, first features and target should be defined.
+Before splitting the data into training and test, first
+features and target should be defined.
 
 ```{r x_y_split}
 # Splitting data into features and target:
@@ -234,7 +290,8 @@ X.test <- X[-trainIndex,]
 y.test <- y[-trainIndex]
 ```
 
-Before moving to modelling step, it is beneficial to check the dimensions and balance of the datasets.
+Before moving to modelling step, it is beneficial to
+check the dimensions and balance of the datasets.
 
 ```{r sanity_check}
 # Number of samples in train data
@@ -251,13 +308,28 @@ prop.table(table(y.train))
 # Proportion of stayed employees for test data
 prop.table(table(y.test))
 ```
-We can observe that the train and test datasets are balanced within themselves. Also  the train data is representative of test data.
+
+We can observe that the train and test datasets are
+balanced within themselves. Also the train data is
+representative of test data.
 
 # Predictive Classification Models
 
-Predictive classification models are a type of machine learning algorithm used to predict the category or class label of new, unseen instances based on historical data. These models are trained using a labeled dataset where the input features (independent variables) are associated with known class labels (dependent variable). The goal of the model is to learn the relationship between the features and the class labels so that it can accurately classify new data points into one of the predefined categories. 
+Predictive classification models are a type of machine
+learning algorithm used to predict the category or
+class label of new, unseen instances based on
+historical data. These models are trained using a
+labeled dataset where the input features (independent
+variables) are associated with known class labels
+(dependent variable). The goal of the model is to learn
+the relationship between the features and the class
+labels so that it can accurately classify new data
+points into one of the predefined categories.
 
-In this project we aim to find the risk of an employee leaving the company (class 0) and the factors affecting employee retention. So we will develop several classification models and examine their performances.
+In this project we aim to find the risk of an employee
+leaving the company (class 0) and the factors affecting
+employee retention. So we will develop several
+classification models and examine their performances.
 
 ## Logistic Regression
 
