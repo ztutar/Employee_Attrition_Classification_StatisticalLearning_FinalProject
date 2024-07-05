@@ -9,7 +9,7 @@ toc: true
 toc-own-page: true
 number_sections: true
 df_print: kable
-fontsize: 11pt
+fontsize: 10pt
 lang: en-GB
 titlepage: true
 titlepage-background: "img/unipdbg.pdf"
@@ -26,6 +26,7 @@ colorlinks: true
 editor_options: 
   markdown: 
     wrap: 55
+    
 
 header-includes:
    - \usepackage{setspace}
@@ -49,16 +50,22 @@ output:
     keep_tex: false
     fig_caption: true
     latex_engine: xelatex
-
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, 
                       warning = FALSE, message = FALSE,
-                      tidy.opts = list(width.cutoff = 55), 
+                      tidy.opts = list(width.cutoff = 72),
+                      out.width = 'textwidth',
                       tidy = TRUE, comment = '',
                       fig.path='figs/',
                       cache = TRUE, cache.path = '_cache/')
+
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  paste0("\n \\", "small","\n\n", x, "\n\n \\normalsize")
+})
 ```
 
 # Introduction to Dataset
@@ -79,9 +86,9 @@ employees.
 
 [^1]: <https://www.kaggle.com/datasets/stealthtechnologies/employee-attrition-dataset/data>
 
-The dataset is already splitted into train and test but
-in order to better understand the data, it is crucial
-to analyse the dataset as a whole.
+The dataset is already split into train and test but in
+order to better understand the data, it is crucial to
+analyse the dataset as a whole.
 
 ```{r import_data}
 
@@ -240,27 +247,44 @@ necessary to prepare the data for model development.
 ## Handling Categorical Features
 
 In order to use the categorical features in the model,
-we need to convert categorical features to numeric
-representations by expanding factors to a set of dummy
-variables. In order to avoid multicollinearity, one
-dummy variable will be dropped.
+we need to convert categorical features to numeric (ordinal or nominal) representations.
 
-```{r dummy}
+```{r numeric}
 
-# Create dummy variables for categorical data
-data_dummy <- model.matrix(~ ., data = data) 
+# Ordinal mappings:
+balance.map <- c('Poor'= 1, 'Fair'= 2, 'Good'= 3, 'Excellent'= 4)
+data$Work.Life.Balance <- balance.map[as.numeric(data$Work.Life.Balance)]
+
+satisfaction.map <- c('Low'= 1, 'Medium'= 2, 'High'= 3, 'Very High'= 4)
+data$Job.Satisfaction <- satisfaction.map[as.numeric(data$Job.Satisfaction)]
+
+performance.map <- c('Low'= 1, 'Below Average'= 2, 'Average'= 3, 'High'= 4)
+data$Performance.Rating <- performance.map[as.numeric(data$Performance.Rating)]
+
+education.map <- c('High School'= 1, 'Associate Degree'= 2, 'Bachelor’s Degree'= 3, 'Master’s Degree'= 4, 'PhD'= 5)
+data$Education.Level <- education.map[as.numeric(data$Education.Level)]
+
+level.map <- c('Entry'= 1, 'Mid'= 2, 'Senior'= 3)
+data$Job.Level <- level.map[as.numeric(data$Job.Level)]
+
+reputation.map <- c('Poor'= 1, 'Fair'= 2, 'Good'= 3, 'Excellent'= 4)
+data$Company.Reputation <- reputation.map[as.numeric(data$Company.Reputation)]
+
+recognition.map <- c('Low'= 1, 'Medium'= 2, 'High'= 3, 'Very High'= 4)
+data$Employee.Recognition <- recognition.map[as.numeric(data$Employee.Recognition)]
+
+size.map <- c('Small'= 1, 'Medium'= 2, 'Large'= 3)
+data$Company.Size <- size.map[as.numeric(data$Company.Size)]
+
+# Nominal mappings:
+# Create dummy variables for nominal data
+data_numeric <- model.matrix( ~ ., data = data) 
 
 # Convert the resulting matrix back to a data frame
-data_dummy <- as.data.frame(data_dummy[,-1])  # -1 to remove the intercept column
-
-# Check for column names
-tail(colnames(data_dummy), 10)
+data_numeric <- as.data.frame(data_numeric)[,-1]  # -1 to remove the intercept column
 
 ```
 
-As expected for each categorical variable a new dummy
-column is created and one column for each category is
-dropped to avoid "dummy variable trap".
 
 ## Train-Test-Split
 
@@ -269,9 +293,9 @@ features and target should be defined.
 
 ```{r x_y_split}
 # Splitting data into features and target:
-X <- data_dummy[, !(colnames(data_dummy) %in% c("Employee.ID", "AttritionStayed"))]
+X <- data_numeric[, !(colnames(data_numeric) %in% c("Employee.ID", "AttritionStayed"))]
 
-y <- data_dummy$AttritionStayed
+y <- data_numeric$AttritionStayed
 ```
 
 Now, we can split the dataset for modelling.
@@ -319,7 +343,7 @@ Predictive classification models are a type of machine
 learning algorithm used to predict the category or
 class label of new, unseen instances based on
 historical data. These models are trained using a
-labeled dataset where the input features (independent
+labelled dataset where the input features (independent
 variables) are associated with known class labels
 (dependent variable). The goal of the model is to learn
 the relationship between the features and the class
@@ -333,7 +357,23 @@ classification models and examine their performances.
 
 ## Logistic Regression
 
+The logistic regression model estimates the odds of the
+dependent variable occurring and applies the logit
+(log-odds) transformation to express this relationship.
+
+$$
+g(\pi_i) = \text{logit}(\pi_i) = \log \left( \frac{\pi_i}{1 - \pi_i} \right)     \in (-\infty, +\infty)
+$$
+
 ### Basic Logistic Classifier
+
+```{r}
+logit.out <- glm(y.train ~ ., data = X.train, family = binomial)
+
+summary(logit.out)
+```
+The above results indicate that some features are insignificant to Attrition, such as; Education.LevelBachelor's Degree, Company.SizeMedium, 
+
 
 ### Logistic Regression with Backward Variable Selection
 
