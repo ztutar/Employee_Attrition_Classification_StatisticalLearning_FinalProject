@@ -70,25 +70,21 @@ knitr::knit_hooks$set(chunk = function(x, options) {
 
 # Introduction to Dataset
 
-The aim of this project is to develop two predictive
-models to determine employee attrition of a company.
-The dataset[^1] used for this project is a simulated
-dataset designed for the analysis and prediction of
-employee attrition. It contains detailed information
-about various aspects of an employee's profile,
-including demographics, job-related features, and
-personal circumstances.The dataset contains 74,498
-samples. Each record includes a unique Employee ID and
-features that influence employee attrition. The goal is
-to understand the factors contributing to attrition and
-develop predictive models to identify at-risk
-employees.
+The aim of this project is to develop two predictive models to determine
+employee attrition of a company. The dataset[^1] used for this project
+is a simulated dataset designed for the analysis and prediction of
+employee attrition. It contains detailed information about various
+aspects of an employee's profile, including demographics, job-related
+features, and personal circumstances.The dataset contains 74,498
+samples. Each record includes a unique Employee ID and features that
+influence employee attrition. The goal is to understand the factors
+contributing to attrition and develop predictive models to identify
+at-risk employees.
 
 [^1]: <https://www.kaggle.com/datasets/stealthtechnologies/employee-attrition-dataset/data>
 
-The dataset is already split into train and test but in
-order to better understand the data, it is crucial to
-analyse the dataset as a whole.
+The dataset is already split into train and test but in order to better
+understand the data, it is crucial to analyse the dataset as a whole.
 
 ```{r import_data}
 
@@ -105,80 +101,73 @@ attach(data)
 
 The features of the dataset are presented below:
 
--   **Employee ID:** A unique identifier assigned to
-    each employee.
+-   **Employee ID:** A unique identifier assigned to each employee.
 
--   **Age:** The age of the employee, ranging from 18
-    to 60 years.
+-   **Age:** The age of the employee, ranging from 18 to 60 years.
 
 -   **Gender:** The gender of the employee
 
--   **Years at Company:** The number of years the
-    employee has been working at the company.
+-   **Years at Company:** The number of years the employee has been
+    working at the company.
 
--   **Monthly Income:** The monthly salary of the
-    employee, in dollars.
+-   **Monthly Income:** The monthly salary of the employee, in dollars.
 
--   **Job Role:** The department or role the employee
-    works in, encoded into categories such as Finance,
-    Healthcare, Technology, Education, and Media.
+-   **Job Role:** The department or role the employee works in, encoded
+    into categories such as Finance, Healthcare, Technology, Education,
+    and Media.
 
--   **Work-Life Balance:** The employee's perceived
-    balance between work and personal life, (Poor,
-    Below Average, Good, Excellent)
+-   **Work-Life Balance:** The employee's perceived balance between work
+    and personal life, (Poor, Below Average, Good, Excellent)
 
--   **Job Satisfaction:** The employee's satisfaction
-    with their job: (Very Low, Low, Medium, High)
+-   **Job Satisfaction:** The employee's satisfaction with their job:
+    (Very Low, Low, Medium, High)
 
--   **Performance Rating:** The employee's performance
-    rating: (Low, Below Average, Average, High)
+-   **Performance Rating:** The employee's performance rating: (Low,
+    Below Average, Average, High)
 
--   **Number of Promotions:** The total number of
-    promotions the employee has received.
+-   **Number of Promotions:** The total number of promotions the
+    employee has received.
 
--   **Distance from Home:** The distance between the
-    employee's home and workplace, in miles.
+-   **Distance from Home:** The distance between the employee's home and
+    workplace, in miles.
 
--   **Education Level:** The highest education level
-    attained by the employee: (High School, Associate
-    Degree, Bachelor’s Degree, Master’s Degree, PhD)
+-   **Education Level:** The highest education level attained by the
+    employee: (High School, Associate Degree, Bachelor’s Degree,
+    Master’s Degree, PhD)
 
--   **Marital Status:** The marital status of the
-    employee: (Divorced, Married, Single)
+-   **Marital Status:** The marital status of the employee: (Divorced,
+    Married, Single)
 
--   **Job Level:** The job level of the employee:
-    (Entry, Mid, Senior)
+-   **Job Level:** The job level of the employee: (Entry, Mid, Senior)
 
--   **Company Size:** The size of the company the
-    employee works for: (Small,Medium,Large)
+-   **Company Size:** The size of the company the employee works for:
+    (Small,Medium,Large)
 
--   **Company Tenure:** The total number of years the
-    employee has been working in the industry.
+-   **Company Tenure:** The total number of years the employee has been
+    working in the industry.
 
--   **Remote Work:** Whether the employee works
-    remotely: (Yes or No)
+-   **Remote Work:** Whether the employee works remotely: (Yes or No)
 
--   **Leadership Opportunities:** Whether the employee
-    has leadership opportunities: (Yes or No)
+-   **Leadership Opportunities:** Whether the employee has leadership
+    opportunities: (Yes or No)
 
--   **Innovation Opportunities:** Whether the employee
-    has opportunities for innovation: (Yes or No)
+-   **Innovation Opportunities:** Whether the employee has opportunities
+    for innovation: (Yes or No)
 
--   **Company Reputation:** The employee's perception
-    of the company's reputation: (Very Poor, Poor,Good,
-    Excellent)
+-   **Company Reputation:** The employee's perception of the company's
+    reputation: (Very Poor, Poor,Good, Excellent)
 
--   **Employee Recognition:** The level of recognition
-    the employee receives:(Very Low, Low, Medium, High)
+-   **Employee Recognition:** The level of recognition the employee
+    receives:(Very Low, Low, Medium, High)
 
--   **Attrition:** Whether the employee has left the
-    company, encoded as 0 (stayed) and 1 (Left).
+-   **Attrition:** Whether the employee has left the company, encoded as
+    0 (stayed) and 1 (Left).
 
 # Data Analysis
 
-In order to develop predictive models, first it is
-necessary to perform exploratory data analysis (EDA)
-and modify the format of the data if necessary.
+In order to develop predictive models, first it is necessary to perform
+exploratory data analysis (EDA) and modify the format of the data if
+necessary.
 
 ```{r libraries}
 # installing required libraries
@@ -186,7 +175,6 @@ library(car)
 library(dplyr)
 library(corrplot)
 ```
-
 
 ```{r summary}
 
@@ -200,16 +188,18 @@ str(data)
 
 ## Data Preprocessing
 
-To prepare the dataset for further analysis, several
-data preprocessing steps are performed:
+To prepare the dataset for further analysis, several data preprocessing
+steps are performed:
 
-  1.  Removing features
+1.  Removing features
+
 ```{r ID_drop}
 # first column contains Employee IDs, so not necessary for analysis
 data <- data[, !names(data) %in% "Employee.ID"]
 ```
 
-  2. Numeric and categorical value separation
+2.  Numeric and categorical value separation
+
 ```{r num_cat}
 numeric_vars <- sapply(data, is.numeric)
 categoric_vars <- sapply(data, function(x) is.factor(x) || is.character(x))
@@ -222,7 +212,8 @@ numeric_var_names <- names(data)[numeric_vars]
 summary(data[, numeric_vars])
 ```
 
-  3. Handling missing values
+3.  Handling missing values
+
 ```{r NA_val}
 # Missing Values --- No null Values
 na_summary <- sapply(data, function(x) sum(is.na(x)))
@@ -247,12 +238,13 @@ for (cat_var in categoric_var_names) {
 }
 
 ```
+
 ```{r, include=FALSE}
 par(mfrow = c(1, 1)) 
 ```
 
-
 ### Numeric Features
+
 ```{r num_f}
 # Numeric features--hist graph
 plots_per_page <- 4
@@ -271,12 +263,13 @@ for (page in 1:num_pages) {
   }
 }
 ```
+
 ```{r, include=FALSE}
 par(mfrow = c(1, 1))  
 ```
 
-
 ### Target Values
+
 ```{r target}
 # Target values
 par(mfrow = c(1, 2))  
@@ -293,6 +286,7 @@ pie(attrition_df$Count, labels=paste(attrition_df$Attrition, " - ", attrition_df
 
  
 ```
+
 ```{r, include=FALSE}
 par(mfrow = c(1, 1)) 
 ```
@@ -329,7 +323,6 @@ num_plots <- length(numeric_var_names)
 num_pages <- ceiling(num_plots / plots_per_page)
 ```
 
-
 ```{r}
 # Density plots
 cat_var <- "Attrition"
@@ -348,7 +341,6 @@ for (page in 1:num_pages) {
 }
 par(mfrow = c(1, 1))
 ```
-
 
 ### Outliers
 
@@ -415,16 +407,22 @@ for (page in 1:num_pages) {
 par(mfrow = c(1, 1))
 ```
 
-As a result of the analysis, the following observations
-were made regarding the characteristics of the data:
+As a result of the analysis, the following observations were made
+regarding the characteristics of the data:
 
--
--
--
--
--
--
--
+-   
+
+-   
+
+-   
+
+-   
+
+-   
+
+-   
+
+-   
 
 ## Features vs. Target
 
@@ -447,19 +445,18 @@ print(cor_matrix)
 corrplot(cor_matrix, method = 'number', type = "upper", tl.col = "black", tl.srt = 45)
 ```
 
-
 ### Partial Correlation Matrices
 
 # Data Preparation
 
-After completing the data analysis steps, it is
-necessary to prepare the data for model development.
+After completing the data analysis steps, it is necessary to prepare the
+data for model development.
 
 ## Handling Categorical Features
 
-In order to use the categorical features in the model,
-we need to convert categorical features to numeric
-(ordinal or nominal) representations.
+In order to use the categorical features in the model, we need to
+convert categorical features to numeric (ordinal or nominal)
+representations.
 
 ```{r mapping}
 
@@ -499,8 +496,8 @@ data_numeric <- as.data.frame(data_numeric)[,-1]  # -1 to remove the intercept c
 
 ## Train-Test-Split
 
-Before splitting the data into training and test, first
-features and target should be defined.
+Before splitting the data into training and test, first features and
+target should be defined.
 
 ```{r x_y_split}
 # Splitting data into features and target:
@@ -525,8 +522,8 @@ X.test <- X[-trainIndex,]
 y.test <- y[-trainIndex]
 ```
 
-Before moving to modelling step, it is beneficial to
-check the dimensions and balance of the datasets.
+Before moving to modelling step, it is beneficial to check the
+dimensions and balance of the datasets.
 
 ```{r sanity_check}
 # Number of samples in train data
@@ -544,19 +541,30 @@ prop.table(table(y.train))
 prop.table(table(y.test))
 ```
 
-We can observe that the train and test datasets are
-balanced within themselves. Also the train data is
-representative of test data.
+We can observe that the train and test datasets are balanced within
+themselves. Also the train data is representative of test data.
 
 # Predictive Classification Models
 
-Predictive classification models are a type of machine learning algorithm used to predict the category or class label of new, unseen instances based on historical data. These models are trained using a labelled dataset where the input features (independent variables) are associated with known class labels (dependent variable). The goal of the model is to learn the relationship between the features and the class labels so that it can accurately classify new data points into one of the predefined categories.
+Predictive classification models are a type of machine learning
+algorithm used to predict the category or class label of new, unseen
+instances based on historical data. These models are trained using a
+labelled dataset where the input features (independent variables) are
+associated with known class labels (dependent variable). The goal of the
+model is to learn the relationship between the features and the class
+labels so that it can accurately classify new data points into one of
+the predefined categories.
 
-In this project we aim to find the risk of an employee leaving the company (class 0) and the factors affecting employee retention. So we will develop several classification models and examine their performances.
+In this project we aim to find the risk of an employee leaving the
+company (class 0) and the factors affecting employee retention. So we
+will develop several classification models and examine their
+performances.
 
 ## Logistic Regression
 
-The logistic regression model estimates the odds of the dependent variable occurring and applies the logit (log-odds) transformation to express this relationship.
+The logistic regression model estimates the odds of the dependent
+variable occurring and applies the logit (log-odds) transformation to
+express this relationship.
 
 $$
 g(\pi_i) = \text{logit}(\pi_i) = \log \left( \frac{\pi_i}{1 - \pi_i} \right)     \in (-\infty, +\infty)
@@ -571,87 +579,148 @@ glm.FULL <- glm(y.train ~ ., data = X.train, family = binomial)
 summary(glm.FULL)
 ```
 
-The above model statistics indicate that p-values of Company.Tenure and Employee Recognition are above 0.5 indicating that these features are insignificant to the
-results. Additionally, some Job.Roles and
-Monthly.Income also have high p-values indicating that their effect on Attrition is less significant compared to other features. However, for now we would like to keep all the features in the model and apply feature selection later.
+The above model statistics indicate that p-values of Company.Tenure and
+Employee Recognition are above 0.5 indicating that these features are
+insignificant to the results. Additionally, some Job.Roles and
+Monthly.Income also have high p-values indicating that their effect on
+Attrition is less significant compared to other features. However, for
+now we would like to keep all the features in the model and apply
+feature selection later.
 
-In order to understand how well the model fits the data we can make use of \( R^2 \) statistics. \( R^2 \) provides an indication of how well the independent variables in the
-model explain the variability of the dependent
-variable. A higher \( R^2 \) value indicates a better fit of the model to the data. The formula for \( R^2 \) is:
+In order to understand how well the model fits the data we can make use
+of $R^2$ statistics. $R^2$ provides an indication of how well the
+independent variables in the model explain the variability of the
+dependent variable. A higher $R^2$ value indicates a better fit of the
+model to the data. The formula for $R^2$ is:
 
 $$ R^2 = 1 - \frac{RSS}{ESS} $$
 
 Where:
 
--   ${RSS}$ is the sum of squares of the residuals (the differences between observed and predicted values), i.e. the deviance of the fitted model
--   ${ESS}$ is the total sum of squares due to regression (the differences between the observed values and the mean of the observed values) 
+-   ${RSS}$ is the sum of squares of the residuals (the differences
+    between observed and predicted values), i.e. the deviance of the
+    fitted model
+-   ${ESS}$ is the total sum of squares due to regression (the
+    differences between the observed values and the mean of the observed
+    values)
 
 ```{r full_r2}
 R2 <- 1 - (summary(glm.FULL)$deviance/summary(glm.FULL)$null.deviance)
 R2
 ```
 
-With the full model the value of \( R^2 \) 0.2352228 indicates that approximately 23.52% of the variance in the target can be explained by the features in the model. Since 23.52% is relatively low, it suggests that the model is not capturing much of the underlying pattern in the data.
+With the full model the value of $R^2$ 0.2352228 indicates that
+approximately 23.52% of the variance in the target can be explained by
+the features in the model. Since 23.52% is relatively low, it suggests
+that the model is not capturing much of the underlying pattern in the
+data.
 
-Multicollinearity can be a reason for a low \( R^2 \) value, as it can make it difficult to determine the individual effect of each predictor on the target. Calculating the Variance Inflation Factor (VIF) can help to check for multicollinearity among the features.
+Multicollinearity can be a reason for a low $R^2$ value, as it can make
+it difficult to determine the individual effect of each predictor on the
+target. Calculating the Variance Inflation Factor (VIF) can help to
+check for multicollinearity among the features.
 
 ```{r vif}
 library(car)
-#vif(glm.FULL)
 
 vif.FULL <- data.frame(features = names(vif(glm.FULL)), VIF = vif(glm.FULL),row.names = NULL)
 vif.FULL[order(-vif.FULL$VIF), ]
 ```
-A VIF value of 1 indicates no correlation, values between 1 and 5 indicate moderate correlation and values above 5 suggest significant multicollinearity, which can lead to unreliable coefficient estimates. Most variables have VIF values close to 1, indicating very low or no multicollinearity. A few variables have VIF values between 1 and 5, suggesting moderate multicollinearity, which may not pose serious issues but should be monitored. These variables include Job.RoleTechnology, Job.RoleHealthcare, Monthly.Income, Job.RoleFinance, Marital.StatusSingle, Marital.StatusMarried, Job.RoleMedia and Years.at.Company. These are mostly dummy features of nominal variables and dummy variables are often correlated because they represent categories of the same nominal variable.
+
+A VIF value of 1 indicates no correlation, values between 1 and 5
+indicate moderate correlation and values above 5 suggest significant
+multicollinearity, which can lead to unreliable coefficient estimates.
+Most variables have VIF values close to 1, indicating very low or no
+multicollinearity. A few variables have VIF values between 1 and 5,
+suggesting moderate multicollinearity, which may not pose serious issues
+but should be monitored. These variables include Job.RoleTechnology,
+Job.RoleHealthcare, Monthly.Income, Job.RoleFinance,
+Marital.StatusSingle, Marital.StatusMarried, Job.RoleMedia and
+Years.at.Company. These are mostly dummy features of nominal variables
+and dummy variables are often correlated because they represent
+categories of the same nominal variable.
 
 ### Logistic Regression with Backward Variable Selection
 
-Backward variable selection is a greedy search algorithm used to develop a predictive model by iteratively removing the least significant features The goal is to find the best subset of features that contribute to the model while eliminating those that do not improve its performance. 
+Backward variable selection is a greedy search algorithm used to develop
+a predictive model by iteratively removing the least significant
+features The goal is to find the best subset of features that contribute
+to the model while eliminating those that do not improve its
+performance.
 
-Since already one dummy variable for each category is dropped, removing additional dummy variables can lead to loss of information. Therefore, we should drop the features that represent the same category while performing backward selection.
+We can use the step() function to perform backward stepwise search. As a
+regularization criteria we can either use BIC or AIC. But BIC statistic
+generally places a heavier penalty on models with many variables, and
+hence results in the selection of smaller models than AIC. In this case,
+the model has moderate amount of variables so we can use AIC statistic.
+Since already one dummy variable for each category is dropped, removing
+additional dummy variables can lead to loss of information so we need to
+be cautious.
 
+```{r step_back}
+# Backward Stepwise Search with BIC as penalty term
+glm.bwd.AIC <- step(glm.FULL, direction="backward", k=2, trace=0, steps=20)
+summary(glm.bwd.AIC)
 
-```{r backward_1}
-# Backward Step 1: Remove Job.Roles
-# Job.Role features both have relatively high VIF values and high p-values
+R2.bwd.AIC <- 1 - (summary(glm.bwd.AIC)$deviance/summary(glm.bwd.AIC)$null.deviance)
+R2.bwd.AIC
 
-glm.back.1 <- update(glm.FULL, .~.-Job.RoleTechnology-Job.RoleHealthcare-Job.RoleMedia-Job.RoleFinance)
-
-vif.back.1 <- data.frame(features = names(vif(glm.back.1)), VIF = vif(glm.back.1),row.names = NULL)
-vif.back.1[order(-vif.back.1$VIF), ]
-```
-
-```{r backward_2}
-# Backward Step 2: Remove Marital.Status
-
-glm.back.2 <- update(glm.back.1, .~.-Marital.StatusSingle-Marital.StatusMarried)
-
-vif.back.2 <- data.frame(features = names(vif(glm.back.2)), VIF = vif(glm.back.2),row.names = NULL)
-vif.back.2[order(-vif.back.2$VIF), ]
-
-```
-
-At this point all the VIF values above 2 have been removed. We should also check for the model statistics.
-
-```{r}
-summary(glm.back.2)
-```
-
-Company.Tenure and Employee.Recognition are insignificant to the model. So we can drop them too. 
-
-
-```{r backward_3}
-# Backward Step 3: Remove Company.Tenure
-
-glm.back.3 <- update(glm.back.2, .~.-Company.Tenure-Employee.Recognition)
-
-summary(glm.back.3)
+vif.bwd.AIC <- data.frame(features = names(vif(glm.bwd.AIC)), VIF = vif(glm.bwd.AIC),row.names = NULL)
+vif.bwd.AIC[order(-vif.bwd.AIC$VIF), ]
 
 ```
-Although we decreased the VIF scores and p-values, unfortunately, both RSS and AIC scores increased and \( R^2 \) dropped to 0.1592564. So, the models ability to capture the underlying pattern within the dataset decreased. Therefore the greedy search did not converge to an optimal model.
 
+It looks like backward stepwise search dropped "Job.RoleFinance",
+"Job.RoleHealthcare", "Job.RoleTechnology", "Company.Tenure" and
+"Employee.Recognition" from the model. These features were also the ones
+with high p-values so it seems logical. But oddly the model kept the
+"Job.RoleMedia" feature so this tells us that having a job role in Media
+is significant to employee Attrition for this case.
+
+Although we decreased the VIF scores, p-values and AIC score
+unfortunately, RSS increased and $R^2$ dropped to 0.2352002. So, the
+models ability to capture the underlying pattern within the dataset
+decreased. Therefore the backward search did not converge to an optimal
+model.
 
 ### Logistic Regression with Shrinkage Method
+
+Shrinkage methods are techniques used in regression analysis to prevent
+overfitting by introducing a penalty for large coefficients. These
+methods "shrink" the coefficients towards zero, effectively reducing
+their variance and, in turn, enhancing the model's generalizability. Two
+most used shrinkage methods are Ridge Regression and Lasso Regression.
+
+-   Ridge Regression adds a penalty to the regression model that shrinks
+    all the coefficients, and is useful when we want to keep all
+    features in the model.
+
+-   Lasso Regression introduces a penalty that can shrink some
+    coefficients to zero. This method is useful for feature selection,
+    yielding sparse models by retaining only the most important
+    features.
+
+-   Elastic Net is a hybrid regularization technique that includes both the Ridge
+    and Lasso penalties, allowing for variable selection (like Lasso) and
+    handling multicollinearity (like Ridge). It aims to incorporate the
+    strengths of both methods, providing a more flexible approach.
+
+Choosing the value of $lambda$ (the tuning parameter) is crucial because
+it determines the strength of the penalty applied to the coefficients.
+We can choose the best value of $lambda$ using k-fold cross-validation method.
+
+
+```{r NET}
+# Elastic Net Regression with alpha=0.1 (more weight on Ridge Reg.)
+glm.ELNET <- cv.glmnet(as.matrix(X.train), y.train, alpha = 0.1, 
+                       family = "binomial", type.measure = "class")
+
+
+glm.ELNET
+
+plot(glm.ELNET)
+
+```
 
 ### ROC Curve & Comparison of Logistic Classifiers
 
