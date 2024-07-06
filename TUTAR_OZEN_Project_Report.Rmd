@@ -174,6 +174,8 @@ necessary.
 library(car)
 library(dplyr)
 library(corrplot)
+library(glmnet)
+library(pROC)
 ```
 
 ```{r summary}
@@ -640,7 +642,7 @@ Years.at.Company. These are mostly dummy features of nominal variables
 and dummy variables are often correlated because they represent
 categories of the same nominal variable.
 
-### Logistic Regression with Backward Variable Selection
+### Logistic Regression with Backward Stepwise Search
 
 Backward variable selection is a greedy search algorithm used to develop
 a predictive model by iteratively removing the least significant
@@ -658,15 +660,13 @@ additional dummy variables can lead to loss of information so we need to
 be cautious.
 
 ```{r step_back}
-# Backward Stepwise Search with BIC as penalty term
-glm.bwd.AIC <- step(glm.FULL, direction="backward", k=2, trace=0, steps=20)
-summary(glm.bwd.AIC)
+# Backward Stepwise Search with AIC statistics
+glm.BACKWARD <- step(glm.FULL, direction="backward", k=2, trace=0, steps=20)
+summary(glm.BACKWARD)
 
-R2.bwd.AIC <- 1 - (summary(glm.bwd.AIC)$deviance/summary(glm.bwd.AIC)$null.deviance)
-R2.bwd.AIC
+vif.BAKWARD <- data.frame(features = names(vif(glm.BACKWARD)), VIF = vif(glm.BACKWARD),row.names = NULL)
 
-vif.bwd.AIC <- data.frame(features = names(vif(glm.bwd.AIC)), VIF = vif(glm.bwd.AIC),row.names = NULL)
-vif.bwd.AIC[order(-vif.bwd.AIC$VIF), ]
+vif.BAKWARD[order(-vif.BAKWARD$VIF), ]
 
 ```
 
@@ -677,11 +677,10 @@ with high p-values so it seems logical. But oddly the model kept the
 "Job.RoleMedia" feature so this tells us that having a job role in Media
 is significant to employee Attrition for this case.
 
-Although we decreased the VIF scores, p-values and AIC score
+Although we decreased the VIF scores, p-values and AIC score,
 unfortunately, RSS increased and $R^2$ dropped to 0.2352002. So, the
 models ability to capture the underlying pattern within the dataset
-decreased. Therefore the backward search did not converge to an optimal
-model.
+decreased.
 
 ### Logistic Regression with Shrinkage Method
 
@@ -711,18 +710,55 @@ We can choose the best value of $lambda$ using k-fold cross-validation method.
 
 
 ```{r NET}
-# Elastic Net Regression with alpha=0.1 (more weight on Ridge Reg.)
-glm.ELNET <- cv.glmnet(as.matrix(X.train), y.train, alpha = 0.1, 
+# Elastic Net Regression with alpha=0.05 (more weight on Ridge Reg.)
+set.seed(42)
+
+glm.ELNET <- cv.glmnet(as.matrix(X.train), y.train, alpha = 0.05, 
                        family = "binomial", type.measure = "class")
-
-
-glm.ELNET
 
 plot(glm.ELNET)
 
+best.lamda <- glm.ELNET$lambda.min
 ```
 
-### ROC Curve & Comparison of Logistic Classifiers
+### Comparison of Logistic Classifiers
+
+For Logistic Regression we defined 3 Logistic classifiers. In order to identify the best model we can compare their performance on the test sets to see how well they captured the underlying pattern of the data and their ability to generalize to new data.
+
+```{r log_compare}
+# 1. Basic Logistic Classifier
+glm.FULL.predict <- predict(glm.FULL, newdata = X.test, type = "response")
+
+# 2. Feature Selection with Backward Stepwise Search
+glm.BACKWARD.predict <- predict(glm.BACKWARD, newdata = X.test, type = "response")
+
+# 3. Elastic Net Shrinkage Method
+glm.ELNET.predict <- predict(glm.ELNET, newx = as.matrix(X.test), 
+                             type = "response", s = best.lamda)
+```
+
+We can use ROC curve and AUC values to compare the models.The ROC curve is a tool for assessing the performance of binary classification models, plotting true positive rate against false positive rate at various thresholds. The Area Under the Curve (AUC) provides a measure of the model's ability to predict the target values, with higher values indicating better performance.
+
+```{r roc_auc}
+
+par(pty="s")
+invisible(roc(y.test, glm.FULL.predict, plot=TRUE, legacy.axes=TRUE, percent=TRUE, 
+    xlab="False Positive %", ylab="True Positive %", col="firebrick4", lwd=4,
+    print.auc=TRUE, print.auc.y=60, print.auc.x=30, quiet = TRUE))
+
+plot.roc(y.test, glm.BACKWARD.predict, add=TRUE, legacy.axes=TRUE, percent=TRUE, 
+    xlab="False Positive %", ylab="True Positive %", col="indianred3", lwd=4,
+    print.auc=TRUE, print.auc.y=50, print.auc.x=30, quiet = TRUE)
+
+plot.roc(y.test, glm.ELNET.predict, add=TRUE, legacy.axes=TRUE, percent=TRUE, 
+    xlab="False Positive %", ylab="True Positive %", col="lightpink2", lwd=4,
+    print.auc=TRUE, print.auc.y=40, print.auc.x=30, quiet = TRUE)
+
+legend("bottomright",legend=c("glm.FULL","glm.BACKWARD","glm.ELNET"),
+       col=c("firebrick4","indianred3","lightpink2"),lwd=4)
+
+```
+
 
 ## Another Classification Model
 
