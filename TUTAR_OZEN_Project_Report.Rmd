@@ -25,7 +25,7 @@ colorlinks: true
 
 editor_options: 
   markdown: 
-    wrap: 55
+    wrap: 72
     
 
 header-includes:
@@ -56,8 +56,8 @@ output:
 knitr::opts_chunk$set(echo = TRUE, 
                       warning = FALSE, message = FALSE,
                       tidy.opts = list(width.cutoff = 72),
-                      out.width = 'textwidth',
                       tidy = TRUE, comment = '',
+                      fig.keep = 'all',
                       fig.path='figs/',
                       cache = TRUE, cache.path = '_cache/')
 
@@ -180,20 +180,21 @@ In order to develop predictive models, first it is
 necessary to perform exploratory data analysis (EDA)
 and modify the format of the data if necessary.
 
-```{r EDA}
-# first column contains Employee IDs, so not necessary for summary
-# Descriptive statistics of DataFrame
-summary(data[,-1])
+```{r libraries}
+# installing required libraries
+library(car)
+library(dplyr)
+library(corrplot)
+```
 
-# Columns in DataFrame
-colnames(data[,-1])
+
+```{r summary}
+
+# Descriptive statistics of DataFrame
+summary(data)
 
 # Data types of columns
-str(data[,-1])
-
-# Number of unique values in each column
-unique_values <- apply(data, 2, function(x) length(unique(x)))
-print(unique_values)
+str(data)
 
 ```
 
@@ -202,32 +203,228 @@ print(unique_values)
 To prepare the dataset for further analysis, several
 data preprocessing steps are performed:
 
-1.  Converting categorical features to factors
-2.  Removing features
-3.  Handling na values
-4.  etc...
+  1.  Removing features
+```{r ID_drop}
+# first column contains Employee IDs, so not necessary for analysis
+data <- data[, !names(data) %in% "Employee.ID"]
+```
 
-```{r}
-#EDA
+  2. Numeric and categorical value separation
+```{r num_cat}
+numeric_vars <- sapply(data, is.numeric)
+categoric_vars <- sapply(data, function(x) is.factor(x) || is.character(x))
+
+# Taking names of features
+categoric_var_names <- names(data)[categoric_vars]
+numeric_var_names <- names(data)[numeric_vars]
+
+# Numeric val. summary
+summary(data[, numeric_vars])
+```
+
+  3. Handling missing values
+```{r NA_val}
+# Missing Values --- No null Values
+na_summary <- sapply(data, function(x) sum(is.na(x)))
+na_summary
 
 ```
+
+### Categorical Features
+
+```{r cat_f}
+# Categorical val. dist.
+categoric_var_names <- names(data)[categoric_vars]
+for (var in categoric_var_names) {
+  cat("\nDistribution of", var, ":\n")
+  print(table(data[[var]]))
+}
+
+# Categorical val. dist.--barplot
+par(mfrow = c(2, 2))  
+for (cat_var in categoric_var_names) {
+  barplot(table(data[[cat_var]]), main=paste(cat_var, "Distribution"), xlab=cat_var, col="firebrick4")
+}
+
+```
+```{r, include=FALSE}
+par(mfrow = c(1, 1)) 
+```
+
+
+### Numeric Features
+```{r num_f}
+# Numeric features--hist graph
+plots_per_page <- 4
+num_plots <- length(numeric_var_names)
+num_pages <- ceiling(num_plots / plots_per_page)
+
+plot_index <- 1
+for (page in 1:num_pages) {
+  par(mfrow = c(2, 2))  
+  for (i in 1:plots_per_page) {
+    if (plot_index > num_plots) break
+    num_var <- numeric_var_names[plot_index]
+    hist(data[[num_var]], main=paste(num_var, "Distribution"), xlab=num_var, col="firebrick4", breaks=30)
+    
+    plot_index <- plot_index + 1
+  }
+}
+```
+```{r, include=FALSE}
+par(mfrow = c(1, 1))  
+```
+
+
+### Target Values
+```{r target}
+# Target values
+par(mfrow = c(1, 2))  
+
+barplot(table(data$Attrition), main="Attrition Count", xlab="Attrition", ylab="Count", col="firebrick4")
+
+# Target dist - Pie chart
+attrition_table <- table(data$Attrition)
+attrition_df <- as.data.frame(attrition_table)
+colnames(attrition_df) <- c("Attrition", "Count")
+attrition_df$Percentage <- round(100 * attrition_df$Count / sum(attrition_df$Count), 1)
+
+pie(attrition_df$Count, labels=paste(attrition_df$Attrition, " - ", attrition_df$Percentage, "%"), col=c("firebrick4", rgb(red = 155/255, green = 0/255, blue = 20/255, alpha = 0.3)), main="Attrition Distribution", cex=1, radius=1)
+
+ 
+```
+```{r, include=FALSE}
+par(mfrow = c(1, 1)) 
+```
+
+```{r, include=FALSE}
+plots_per_page <- 4
+num_plots <- length(numeric_var_names)
+num_pages <- ceiling(num_plots / plots_per_page)
+```
+
+```{r target-num}
+# Target Visualization with Numeric features Outlier Check --boxplot
+cat_var <- "Attrition"
+
+plot_index <- 1
+for (page in 1:num_pages) {
+  par(mfrow = c(2, 2))  
+  for (i in 1:plots_per_page) {
+    if (plot_index > num_plots) break
+    num_var <- numeric_var_names[plot_index]
+    boxplot(data[[num_var]] ~ data[[cat_var]], main=paste(num_var, "by", cat_var), xlab=cat_var, ylab=num_var, col=rgb(red = 155/255, green = 0/255, blue = 20/255, alpha = 0.3))
+    plot_index <- plot_index + 1
+  }
+}
+```
+
+```{r, include=FALSE}
+par(mfrow = c(1, 1))
+```
+
+```{r, include=FALSE}
+plots_per_page <- 2
+num_plots <- length(numeric_var_names)
+num_pages <- ceiling(num_plots / plots_per_page)
+```
+
+
+```{r}
+# Density plots
+cat_var <- "Attrition"
+
+plot_index <- 1
+for (page in 1:num_pages) {
+  par(mfrow = c(2, 1))  
+  for (i in 1:plots_per_page) {
+    if (plot_index > num_plots) break
+    num_var <- numeric_var_names[plot_index]
+    plot(density(data[[num_var]][data[[cat_var]] == "Left"], na.rm = TRUE), col="red", main=paste(num_var, "Density by", cat_var), xlab=num_var, ylab="Density")
+    lines(density(data[[num_var]][data[[cat_var]] == "Stayed"], na.rm = TRUE), col="blue")
+    legend("topright", legend=c("Left", "Stayed"), col=c("red", "blue"), lty=1, cex=0.8)
+    plot_index <- plot_index + 1
+  }
+}
+par(mfrow = c(1, 1))
+```
+
 
 ### Outliers
 
-```{r}
-#EDA
-
+```{r outliers}
+# Outlier Analysis 
+par(mfrow = c(2, 2))  
+for (num_var in numeric_var_names) {
+  boxplot(data[[num_var]], main=paste(num_var, "Boxplot"), xlab=num_var, col=rgb(red = 155/255, green = 0/255, blue = 20/255, alpha = 0.3))
+}
 ```
 
-### Visualization
+```{r, include=FALSE}
+par(mfrow = c(1, 1))
+```
 
 ```{r}
-#EDA
+# Function to identify outliers using IQR
+identify_outliers <- function(x) {
+  Q1 <- quantile(x, 0.25, na.rm = TRUE)
+  Q3 <- quantile(x, 0.75, na.rm = TRUE)
+  IQR <- Q3 - Q1
+  outliers <- x[x < (Q1 - 1.5 * IQR) | x > (Q3 + 1.5 * IQR)]
+  return(outliers)
+}
 
+# Identify and show outliers for each numeric variable
+outliers_list <- list()
+for (var in numeric_var_names) {
+  outliers <- identify_outliers(data[[var]])
+  outliers_list[[var]] <- outliers
+  cat("\nOutliers in", var, ":\n")
+  print(outliers)
+}
+```
+
+```{r, include=FALSE}
+plots_per_page <- 4
+num_plots <- length(numeric_var_names)
+num_pages <- ceiling(num_plots / plots_per_page)
+```
+
+```{r}
+# Plot histograms and highlight outliers
+
+plot_index <- 1
+for (page in 1:num_pages) {
+  par(mfrow = c(2, 2))  
+  for (i in 1:plots_per_page) {
+    if (plot_index > num_plots) break
+    num_var <- numeric_var_names[plot_index]
+    
+    hist(data[[num_var]], main=paste(num_var, "Distribution"), xlab=num_var, col="cyan", breaks=30)
+    outliers <- outliers_list[[num_var]]
+    if (length(outliers) > 0) {
+      points(outliers, rep(0, length(outliers)), col="red", pch=16)
+    }
+    
+    plot_index <- plot_index + 1
+  }
+}
+```
+
+```{r, include=FALSE}
+par(mfrow = c(1, 1))
 ```
 
 As a result of the analysis, the following observations
 were made regarding the characteristics of the data:
+
+-
+-
+-
+-
+-
+-
+-
 
 ## Features vs. Target
 
@@ -236,6 +433,20 @@ were made regarding the characteristics of the data:
 ### Numerical Features vs. Target
 
 ## Correlation Matrix
+
+```{r Cor.Cov.}
+# Cor. and Cov.
+cov_matrix <- cov(data[, numeric_var_names])
+cor_matrix <- cor(data[, numeric_var_names])
+
+print("Covariance Matrix:")
+print(cov_matrix)
+print("Correlation Matrix:")
+print(cor_matrix)
+
+corrplot(cor_matrix, method = 'number', type = "upper", tl.col = "black", tl.srt = 45)
+```
+
 
 ### Partial Correlation Matrices
 
@@ -247,9 +458,10 @@ necessary to prepare the data for model development.
 ## Handling Categorical Features
 
 In order to use the categorical features in the model,
-we need to convert categorical features to numeric (ordinal or nominal) representations.
+we need to convert categorical features to numeric
+(ordinal or nominal) representations.
 
-```{r numeric}
+```{r mapping}
 
 # Ordinal mappings:
 balance.map <- c('Poor'= 1, 'Fair'= 2, 'Good'= 3, 'Excellent'= 4)
@@ -284,7 +496,6 @@ data_numeric <- model.matrix( ~ ., data = data)
 data_numeric <- as.data.frame(data_numeric)[,-1]  # -1 to remove the intercept column
 
 ```
-
 
 ## Train-Test-Split
 
@@ -339,27 +550,13 @@ representative of test data.
 
 # Predictive Classification Models
 
-Predictive classification models are a type of machine
-learning algorithm used to predict the category or
-class label of new, unseen instances based on
-historical data. These models are trained using a
-labelled dataset where the input features (independent
-variables) are associated with known class labels
-(dependent variable). The goal of the model is to learn
-the relationship between the features and the class
-labels so that it can accurately classify new data
-points into one of the predefined categories.
+Predictive classification models are a type of machine learning algorithm used to predict the category or class label of new, unseen instances based on historical data. These models are trained using a labelled dataset where the input features (independent variables) are associated with known class labels (dependent variable). The goal of the model is to learn the relationship between the features and the class labels so that it can accurately classify new data points into one of the predefined categories.
 
-In this project we aim to find the risk of an employee
-leaving the company (class 0) and the factors affecting
-employee retention. So we will develop several
-classification models and examine their performances.
+In this project we aim to find the risk of an employee leaving the company (class 0) and the factors affecting employee retention. So we will develop several classification models and examine their performances.
 
 ## Logistic Regression
 
-The logistic regression model estimates the odds of the
-dependent variable occurring and applies the logit
-(log-odds) transformation to express this relationship.
+The logistic regression model estimates the odds of the dependent variable occurring and applies the logit (log-odds) transformation to express this relationship.
 
 $$
 g(\pi_i) = \text{logit}(\pi_i) = \log \left( \frac{\pi_i}{1 - \pi_i} \right)     \in (-\infty, +\infty)
@@ -368,14 +565,91 @@ $$
 ### Basic Logistic Classifier
 
 ```{r}
-logit.out <- glm(y.train ~ ., data = X.train, family = binomial)
+# First of all we check the model statistics with all the features
+glm.FULL <- glm(y.train ~ ., data = X.train, family = binomial)
 
-summary(logit.out)
+summary(glm.FULL)
 ```
-The above results indicate that some features are insignificant to Attrition, such as; Education.LevelBachelor's Degree, Company.SizeMedium, 
 
+The above model statistics indicate that p-values of Company.Tenure and Employee Recognition are above 0.5 indicating that these features are insignificant to the
+results. Additionally, some Job.Roles and
+Monthly.Income also have high p-values indicating that their effect on Attrition is less significant compared to other features. However, for now we would like to keep all the features in the model and apply feature selection later.
+
+In order to understand how well the model fits the data we can make use of \( R^2 \) statistics. \( R^2 \) provides an indication of how well the independent variables in the
+model explain the variability of the dependent
+variable. A higher \( R^2 \) value indicates a better fit of the model to the data. The formula for \( R^2 \) is:
+
+$$ R^2 = 1 - \frac{RSS}{ESS} $$
+
+Where:
+
+-   ${RSS}$ is the sum of squares of the residuals (the differences between observed and predicted values), i.e. the deviance of the fitted model
+-   ${ESS}$ is the total sum of squares due to regression (the differences between the observed values and the mean of the observed values) 
+
+```{r full_r2}
+R2 <- 1 - (summary(glm.FULL)$deviance/summary(glm.FULL)$null.deviance)
+R2
+```
+
+With the full model the value of \( R^2 \) 0.2352228 indicates that approximately 23.52% of the variance in the target can be explained by the features in the model. Since 23.52% is relatively low, it suggests that the model is not capturing much of the underlying pattern in the data.
+
+Multicollinearity can be a reason for a low \( R^2 \) value, as it can make it difficult to determine the individual effect of each predictor on the target. Calculating the Variance Inflation Factor (VIF) can help to check for multicollinearity among the features.
+
+```{r vif}
+library(car)
+#vif(glm.FULL)
+
+vif.FULL <- data.frame(features = names(vif(glm.FULL)), VIF = vif(glm.FULL),row.names = NULL)
+vif.FULL[order(-vif.FULL$VIF), ]
+```
+A VIF value of 1 indicates no correlation, values between 1 and 5 indicate moderate correlation and values above 5 suggest significant multicollinearity, which can lead to unreliable coefficient estimates. Most variables have VIF values close to 1, indicating very low or no multicollinearity. A few variables have VIF values between 1 and 5, suggesting moderate multicollinearity, which may not pose serious issues but should be monitored. These variables include Job.RoleTechnology, Job.RoleHealthcare, Monthly.Income, Job.RoleFinance, Marital.StatusSingle, Marital.StatusMarried, Job.RoleMedia and Years.at.Company. These are mostly dummy features of nominal variables and dummy variables are often correlated because they represent categories of the same nominal variable.
 
 ### Logistic Regression with Backward Variable Selection
+
+Backward variable selection is a greedy search algorithm used to develop a predictive model by iteratively removing the least significant features The goal is to find the best subset of features that contribute to the model while eliminating those that do not improve its performance. 
+
+Since already one dummy variable for each category is dropped, removing additional dummy variables can lead to loss of information. Therefore, we should drop the features that represent the same category while performing backward selection.
+
+
+```{r backward_1}
+# Backward Step 1: Remove Job.Roles
+# Job.Role features both have relatively high VIF values and high p-values
+
+glm.back.1 <- update(glm.FULL, .~.-Job.RoleTechnology-Job.RoleHealthcare-Job.RoleMedia-Job.RoleFinance)
+
+vif.back.1 <- data.frame(features = names(vif(glm.back.1)), VIF = vif(glm.back.1),row.names = NULL)
+vif.back.1[order(-vif.back.1$VIF), ]
+```
+
+```{r backward_2}
+# Backward Step 2: Remove Marital.Status
+
+glm.back.2 <- update(glm.back.1, .~.-Marital.StatusSingle-Marital.StatusMarried)
+
+vif.back.2 <- data.frame(features = names(vif(glm.back.2)), VIF = vif(glm.back.2),row.names = NULL)
+vif.back.2[order(-vif.back.2$VIF), ]
+
+```
+
+At this point all the VIF values above 2 have been removed. We should also check for the model statistics.
+
+```{r}
+summary(glm.back.2)
+```
+
+Company.Tenure and Employee.Recognition are insignificant to the model. So we can drop them too. 
+
+
+```{r backward_3}
+# Backward Step 3: Remove Company.Tenure
+
+glm.back.3 <- update(glm.back.2, .~.-Company.Tenure-Employee.Recognition)
+
+summary(glm.back.3)
+
+```
+Although we decreased the VIF scores and p-values, unfortunately, both RSS and AIC scores increased and \( R^2 \) dropped to 0.1592564. So, the models ability to capture the underlying pattern within the dataset decreased. Therefore the greedy search did not converge to an optimal model.
+
 
 ### Logistic Regression with Shrinkage Method
 
