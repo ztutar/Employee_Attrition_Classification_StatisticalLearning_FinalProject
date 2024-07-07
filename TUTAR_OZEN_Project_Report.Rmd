@@ -739,23 +739,25 @@ glm.ELNET.predict <- predict(glm.ELNET, newx = as.matrix(X.test),
 
 We can use ROC curve and AUC values to compare the models.The ROC curve is a tool for assessing the performance of binary classification models, plotting true positive rate against false positive rate at various thresholds. The Area Under the Curve (AUC) provides a measure of the model's ability to predict the target values, with higher values indicating better performance.
 
-```{r roc_auc}
+```{r roc_auc, echo=FALSE, fig.keep='last'}
 
 par(pty="s")
 invisible(roc(y.test, glm.FULL.predict, plot=TRUE, legacy.axes=TRUE, percent=TRUE, 
     xlab="False Positive %", ylab="True Positive %", col="firebrick4", lwd=4,
     print.auc=TRUE, print.auc.y=60, print.auc.x=30, quiet = TRUE))
 
-plot.roc(y.test, glm.BACKWARD.predict, add=TRUE, legacy.axes=TRUE, percent=TRUE, 
-    xlab="False Positive %", ylab="True Positive %", col="indianred3", lwd=4,
-    print.auc=TRUE, print.auc.y=50, print.auc.x=30, quiet = TRUE)
+plot.roc(y.test, glm.BACKWARD.predict, add=TRUE, legacy.axes=TRUE,
+                   percent=TRUE, xlab="False Positive %", ylab="True Positive %",
+                   col="indianred3", lwd=4,print.auc=TRUE, print.auc.y=50,
+                   print.auc.x=30, quiet = TRUE)
 
-plot.roc(y.test, glm.ELNET.predict, add=TRUE, legacy.axes=TRUE, percent=TRUE, 
-    xlab="False Positive %", ylab="True Positive %", col="lightpink2", lwd=4,
-    print.auc=TRUE, print.auc.y=40, print.auc.x=30, quiet = TRUE)
+plot.roc(y.test, glm.ELNET.predict, add=TRUE, legacy.axes=TRUE, 
+                   percent=TRUE, xlab="False Positive %", ylab="True Positive %",
+                   col="rosybrown2", lwd=4, print.auc=TRUE, print.auc.y=40,
+                   print.auc.x=30, quiet = TRUE)
 
 legend("bottomright",legend=c("glm.FULL","glm.BACKWARD","glm.ELNET"),
-       col=c("firebrick4","indianred3","lightpink2"),lwd=4)
+       col=c("firebrick4","indianred3","rosybrown2"),lwd=4)
 
 ```
 
