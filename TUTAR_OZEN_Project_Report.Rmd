@@ -476,9 +476,6 @@ data$Job.Satisfaction <- satisfaction.map[as.numeric(data$Job.Satisfaction)]
 performance.map <- c('Low'= 1, 'Below Average'= 2, 'Average'= 3, 'High'= 4)
 data$Performance.Rating <- performance.map[as.numeric(data$Performance.Rating)]
 
-education.map <- c('High School'= 1, 'Associate Degree'= 2, 'Bachelor’s Degree'= 3, 'Master’s Degree'= 4, 'PhD'= 5)
-data$Education.Level <- education.map[as.numeric(data$Education.Level)]
-
 level.map <- c('Entry'= 1, 'Mid'= 2, 'Senior'= 3)
 data$Job.Level <- level.map[as.numeric(data$Job.Level)]
 
@@ -821,7 +818,7 @@ evaluate.model.performance(glm.ELNET.predict, y.test, thresholds, "glm.ELNET")
 
 ```
 
-All of the models have the highest F1 score at threshold level 0.4. And F1 score with 0.4 threshold for glm_ELNET is higher than other models on the test set.
+All of the models have the highest F1 score at threshold level 0.4. And F1 score with 0.4 threshold for glm.ELNET is higher than other models on the test set.
 
 ## Another Classification Model
 
