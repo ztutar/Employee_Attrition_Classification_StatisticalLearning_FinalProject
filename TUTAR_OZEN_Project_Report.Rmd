@@ -57,9 +57,9 @@ knitr::opts_chunk$set(echo = TRUE,
                       warning = FALSE, message = FALSE,
                       tidy.opts = list(width.cutoff = 72),
                       tidy = TRUE, comment = '',
-                      fig.keep = 'all',
                       fig.path='figs/',
                       cache = TRUE, cache.path = '_cache/')
+# fig.keep = 'all',
 
 def.chunk.hook  <- knitr::knit_hooks$get("chunk")
 knitr::knit_hooks$set(chunk = function(x, options) {
@@ -171,11 +171,14 @@ necessary.
 
 ```{r libraries}
 # installing required libraries
+library(class)
+library(e1071)
 library(car)
-library(dplyr)
 library(corrplot)
 library(glmnet)
+library(dplyr)
 library(pROC)
+library(knitr)
 ```
 
 ```{r summary}
@@ -198,20 +201,20 @@ steps are performed:
 ```{r ID_drop}
 # first column contains Employee IDs, so not necessary for analysis
 data <- data[, !names(data) %in% "Employee.ID"]
+
+# EXPLANATION!!!!!!!!!!
+data <- data[, !names(data) %in% "Company.Tenure"]
+
 ```
 
 2.  Numeric and categorical value separation
 
 ```{r num_cat}
+
 numeric_vars <- sapply(data, is.numeric)
+
 categoric_vars <- sapply(data, function(x) is.factor(x) || is.character(x))
 
-# Taking names of features
-categoric_var_names <- names(data)[categoric_vars]
-numeric_var_names <- names(data)[numeric_vars]
-
-# Numeric val. summary
-summary(data[, numeric_vars])
 ```
 
 3.  Handling missing values
@@ -226,15 +229,18 @@ na_summary
 ### Categorical Features
 
 ```{r cat_f}
-# Categorical val. dist.
+
+#Categorical feature names
 categoric_var_names <- names(data)[categoric_vars]
+
+# Categorical value distributions
 for (var in categoric_var_names) {
   cat("\nDistribution of", var, ":\n")
   print(table(data[[var]]))
 }
 
-# Categorical val. dist.--barplot
-par(mfrow = c(2, 2))  
+# Categorical value distribution -- barplot
+par(mfrow = c(2, 3))  
 for (cat_var in categoric_var_names) {
   barplot(table(data[[cat_var]]), main=paste(cat_var, "Distribution"), xlab=cat_var, col="firebrick4")
 }
@@ -248,14 +254,20 @@ par(mfrow = c(1, 1))
 ### Numeric Features
 
 ```{r num_f}
+# Numeric value summary
+summary(data[, numeric_vars])
+
+# Numeric feature names
+numeric_var_names <- names(data)[numeric_vars]
+
 # Numeric features--hist graph
-plots_per_page <- 4
+plots_per_page <- 6
 num_plots <- length(numeric_var_names)
 num_pages <- ceiling(num_plots / plots_per_page)
 
 plot_index <- 1
 for (page in 1:num_pages) {
-  par(mfrow = c(2, 2))  
+  par(mfrow = c(3, 2))  
   for (i in 1:plots_per_page) {
     if (plot_index > num_plots) break
     num_var <- numeric_var_names[plot_index]
@@ -267,25 +279,26 @@ for (page in 1:num_pages) {
 ```
 
 ```{r, include=FALSE}
-par(mfrow = c(1, 1))  
+par(mfrow = c(1, 1))
 ```
 
 ### Target Values
 
 ```{r target}
-# Target values
-par(mfrow = c(1, 2))  
 
-barplot(table(data$Attrition), main="Attrition Count", xlab="Attrition", ylab="Count", col="firebrick4")
+# Target value distribution
+par(mfrow = c(1, 2)) 
+barplot(table(data$Attrition), main="Attrition Count", xlab="Attrition", ylab="Count", col=c("firebrick4", "rosybrown2"))
 
-# Target dist - Pie chart
+# Target value distribution -- Pie chart
 attrition_table <- table(data$Attrition)
 attrition_df <- as.data.frame(attrition_table)
 colnames(attrition_df) <- c("Attrition", "Count")
 attrition_df$Percentage <- round(100 * attrition_df$Count / sum(attrition_df$Count), 1)
 
-pie(attrition_df$Count, labels=paste(attrition_df$Attrition, " - ", attrition_df$Percentage, "%"), col=c("firebrick4", rgb(red = 155/255, green = 0/255, blue = 20/255, alpha = 0.3)), main="Attrition Distribution", cex=1, radius=1)
-
+pie(attrition_df$Count, labels=paste(attrition_df$Attrition, " - ", attrition_df$Percentage, "%"), 
+    col=c("firebrick4","rosybrown2"),
+    main="Attrition Distribution", cex=1.2, radius=0.8)
  
 ```
 
@@ -293,37 +306,6 @@ pie(attrition_df$Count, labels=paste(attrition_df$Attrition, " - ", attrition_df
 par(mfrow = c(1, 1)) 
 ```
 
-```{r, include=FALSE}
-plots_per_page <- 4
-num_plots <- length(numeric_var_names)
-num_pages <- ceiling(num_plots / plots_per_page)
-```
-
-```{r target-num}
-# Target Visualization with Numeric features Outlier Check --boxplot
-cat_var <- "Attrition"
-
-plot_index <- 1
-for (page in 1:num_pages) {
-  par(mfrow = c(2, 2))  
-  for (i in 1:plots_per_page) {
-    if (plot_index > num_plots) break
-    num_var <- numeric_var_names[plot_index]
-    boxplot(data[[num_var]] ~ data[[cat_var]], main=paste(num_var, "by", cat_var), xlab=cat_var, ylab=num_var, col=rgb(red = 155/255, green = 0/255, blue = 20/255, alpha = 0.3))
-    plot_index <- plot_index + 1
-  }
-}
-```
-
-```{r, include=FALSE}
-par(mfrow = c(1, 1))
-```
-
-```{r, include=FALSE}
-plots_per_page <- 2
-num_plots <- length(numeric_var_names)
-num_pages <- ceiling(num_plots / plots_per_page)
-```
 
 ```{r}
 # Density plots
@@ -331,16 +313,20 @@ cat_var <- "Attrition"
 
 plot_index <- 1
 for (page in 1:num_pages) {
-  par(mfrow = c(2, 1))  
+  par(mfrow = c(2, 3))  
   for (i in 1:plots_per_page) {
     if (plot_index > num_plots) break
     num_var <- numeric_var_names[plot_index]
-    plot(density(data[[num_var]][data[[cat_var]] == "Left"], na.rm = TRUE), col="red", main=paste(num_var, "Density by", cat_var), xlab=num_var, ylab="Density")
+    plot(density(data[[num_var]][data[[cat_var]] == "Left"], na.rm = TRUE), col="red", main=paste(num_var, "Density \nby", cat_var), xlab=num_var, ylab="Density")
     lines(density(data[[num_var]][data[[cat_var]] == "Stayed"], na.rm = TRUE), col="blue")
     legend("topright", legend=c("Left", "Stayed"), col=c("red", "blue"), lty=1, cex=0.8)
     plot_index <- plot_index + 1
   }
 }
+
+```
+
+```{r, include=FALSE}
 par(mfrow = c(1, 1))
 ```
 
@@ -348,15 +334,39 @@ par(mfrow = c(1, 1))
 
 ```{r outliers}
 # Outlier Analysis 
-par(mfrow = c(2, 2))  
+par(mfrow = c(2, 3)) 
 for (num_var in numeric_var_names) {
-  boxplot(data[[num_var]], main=paste(num_var, "Boxplot"), xlab=num_var, col=rgb(red = 155/255, green = 0/255, blue = 20/255, alpha = 0.3))
+  boxplot(data[[num_var]], main=paste(num_var, "Boxplot"), xlab=num_var, col="firebrick4")
 }
 ```
 
 ```{r, include=FALSE}
 par(mfrow = c(1, 1))
 ```
+
+
+```{r target-num}
+
+# Target Visualization with Numeric features Outlier Check -- boxplot
+cat_var <- "Attrition"
+
+plot_index <- 1
+for (page in 1:num_pages) {
+  par(mfrow = c(2, 3))  
+  for (i in 1:plots_per_page) {
+    if (plot_index > num_plots) break
+    num_var <- numeric_var_names[plot_index]
+    boxplot(data[[num_var]] ~ data[[cat_var]], main=paste(num_var, "\nby", cat_var), xlab=cat_var, ylab=num_var, col="firebrick4")
+    plot_index <- plot_index + 1
+  }
+}
+```
+
+```{r, include=FALSE}
+par(mfrow = c(1, 1))
+```
+
+
 
 ```{r}
 # Function to identify outliers using IQR
@@ -378,26 +388,21 @@ for (var in numeric_var_names) {
 }
 ```
 
-```{r, include=FALSE}
-plots_per_page <- 4
-num_plots <- length(numeric_var_names)
-num_pages <- ceiling(num_plots / plots_per_page)
-```
 
 ```{r}
 # Plot histograms and highlight outliers
 
 plot_index <- 1
 for (page in 1:num_pages) {
-  par(mfrow = c(2, 2))  
+  par(mfrow = c(2, 3))  
   for (i in 1:plots_per_page) {
     if (plot_index > num_plots) break
     num_var <- numeric_var_names[plot_index]
     
-    hist(data[[num_var]], main=paste(num_var, "Distribution"), xlab=num_var, col="cyan", breaks=30)
+    hist(data[[num_var]], main=paste(num_var, "Distribution"), xlab=num_var, col="firebrick4", breaks=30)
     outliers <- outliers_list[[num_var]]
     if (length(outliers) > 0) {
-      points(outliers, rep(0, length(outliers)), col="red", pch=16)
+      points(outliers, rep(0, length(outliers)), col="rosybrown2", pch=16)
     }
     
     plot_index <- plot_index + 1
@@ -451,8 +456,7 @@ corrplot(cor_matrix, method = 'number', type = "upper", tl.col = "black", tl.srt
 
 # Data Preparation
 
-After completing the data analysis steps, it is necessary to prepare the
-data for model development.
+After completing the data analysis steps, it is necessary to prepare the data for model development.
 
 ## Handling Categorical Features
 
@@ -581,10 +585,8 @@ glm.FULL <- glm(y.train ~ ., data = X.train, family = binomial)
 summary(glm.FULL)
 ```
 
-The above model statistics indicate that p-values of Company.Tenure and
-Employee Recognition are above 0.5 indicating that these features are
-insignificant to the results. Additionally, some Job.Roles and
-Monthly.Income also have high p-values indicating that their effect on
+
+The above model statistics indicate that p-value of Employee Recognition is above 0.5 indicating that this feature is insignificant to the results. Additionally, some Job.Roles and Monthly. Income also have high p-values indicating that their effect on
 Attrition is less significant compared to other features. However, for
 now we would like to keep all the features in the model and apply
 feature selection later.
@@ -623,8 +625,6 @@ target. Calculating the Variance Inflation Factor (VIF) can help to
 check for multicollinearity among the features.
 
 ```{r vif}
-library(car)
-
 vif.FULL <- data.frame(features = names(vif(glm.FULL)), VIF = vif(glm.FULL),row.names = NULL)
 vif.FULL[order(-vif.FULL$VIF), ]
 ```
@@ -671,11 +671,7 @@ vif.BAKWARD[order(-vif.BAKWARD$VIF), ]
 ```
 
 It looks like backward stepwise search dropped "Job.RoleFinance",
-"Job.RoleHealthcare", "Job.RoleTechnology", "Company.Tenure" and
-"Employee.Recognition" from the model. These features were also the ones
-with high p-values so it seems logical. But oddly the model kept the
-"Job.RoleMedia" feature so this tells us that having a job role in Media
-is significant to employee Attrition for this case.
+"Job.RoleHealthcare", "Job.RoleTechnology" and "Employee.Recognition" from the model. These features were also the ones with highest p-values so it seems logical. But oddly the model kept the "Job.RoleMedia" feature so this tells us that having a job role in Media may be more significant to employee Attrition than other job roles for this dataset.
 
 Although we decreased the VIF scores, p-values and AIC score,
 unfortunately, RSS increased and $R^2$ dropped to 0.2352002. So, the
@@ -756,11 +752,76 @@ plot.roc(y.test, glm.ELNET.predict, add=TRUE, legacy.axes=TRUE,
                    col="rosybrown2", lwd=4, print.auc=TRUE, print.auc.y=40,
                    print.auc.x=30, quiet = TRUE)
 
+
 legend("bottomright",legend=c("glm.FULL","glm.BACKWARD","glm.ELNET"),
        col=c("firebrick4","indianred3","rosybrown2"),lwd=4)
 
+
+
+```
+Although the results are very close, the AUC values indicate that the logistic classifier model with all the features outperformed backward and shrinkage models in means of better generalization. 
+
+To better analyse the difference between the model performances we can calculate and compare the evaluation metrics.
+
+```{r logreg_eval_func}
+# Function to evaluate prediction models at different thresholds
+evaluate.model.performance <- function(predictions, y.test, thresholds, title) {
+  output.list <- list()
+
+  # Looping through each threshold to generate predictions and store in output.list
+  for (threshold in thresholds) {
+    output <- ifelse(predictions > threshold, 1, 0)
+    output.list[[as.character(threshold)]] <- output
+  }
+
+  # Initialize a data frame to store the evaluation metrics for each threshold
+  results <- data.frame(
+    Threshold = numeric(length(thresholds)),
+    Accuracy = numeric(length(thresholds)),
+    F1.Score = numeric(length(thresholds)),
+    Precision = numeric(length(thresholds)),
+    Recall = numeric(length(thresholds))
+  )
+
+  # Compute evaluation metrics for each threshold
+  for (i in 1:length(thresholds)) {
+    threshold <- thresholds[i]
+    predict.output <- output.list[[as.character(threshold)]]
+    
+    # Store results in the results dataframe
+    results[i, "Threshold"] = threshold
+    results[i, "Accuracy"] = mean(predict.output == y.test)
+    results[i, "F1.Score"] = (2 * sum((predict.output == 1 & y.test == 1)) /
+                                (2 * sum((predict.output == 1 & y.test == 1)) + 
+                                 sum(predict.output == 1 & y.test == 0) + 
+                                 sum(predict.output == 0 & y.test == 1)))
+    results[i, "Precision"] = sum(predict.output == 1 & y.test == 1) / sum(predict.output == 1)
+    results[i, "Recall"] = sum(predict.output == 1 & y.test == 1) / sum(y.test == 1)
+  }
+
+  # Rounding results
+  results[, c("Accuracy", "F1.Score", "Precision", "Recall")] <- round(results[, c("Accuracy", "F1.Score", "Precision", "Recall")], 4)
+
+  # Return the results table
+  kable(results, align = "c", caption = c("Performance Metrics",title))
+}
 ```
 
+```{r logreg_evals, echo=FALSE}
+thresholds <- c(0.3, 0.4, 0.5, 0.6, 0.7)
+
+# 1. Basic Logistic Classifier
+evaluate.model.performance(glm.FULL.predict, y.test, thresholds, "glm.FULL")
+
+# 2. Feature Selection with Backward Stepwise Search
+evaluate.model.performance(glm.BACKWARD.predict, y.test, thresholds, "glm.BACKWARD")
+
+# 3. Elastic Net Shrinkage Method
+evaluate.model.performance(glm.ELNET.predict, y.test, thresholds, "glm.ELNET")
+
+```
+
+All of the models have the highest F1 score at threshold level 0.4. And F1 score with 0.4 threshold for glm_ELNET is higher than other models on the test set.
 
 ## Another Classification Model
 

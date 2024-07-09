@@ -1,0 +1,27 @@
+\babel@toc {british}{}\relax 
+\contentsline {section}{\nonumberline Introduction to Dataset}{2}{section*.3}%
+\contentsline {subsection}{\nonumberline Description of the Features}{2}{subsection*.5}%
+\contentsline {section}{\nonumberline Data Analysis}{3}{section*.7}%
+\contentsline {subsection}{\nonumberline Data Preprocessing}{5}{subsection*.9}%
+\contentsline {subsubsection}{\nonumberline Categorical Features}{6}{subsubsection*.11}%
+\contentsline {subsubsection}{\nonumberline Numeric Features}{10}{subsubsection*.13}%
+\contentsline {subsubsection}{\nonumberline Target Values}{11}{subsubsection*.15}%
+\contentsline {subsubsection}{\nonumberline Outliers}{13}{subsubsection*.17}%
+\contentsline {subsection}{\nonumberline Features vs.~Target}{18}{subsection*.19}%
+\contentsline {subsubsection}{\nonumberline Categorical Features vs.~Target}{18}{subsubsection*.21}%
+\contentsline {subsubsection}{\nonumberline Numerical Features vs.~Target}{18}{subsubsection*.23}%
+\contentsline {subsection}{\nonumberline Correlation Matrix}{18}{subsection*.25}%
+\contentsline {subsubsection}{\nonumberline Partial Correlation Matrices}{20}{subsubsection*.27}%
+\contentsline {section}{\nonumberline Data Preparation}{20}{section*.29}%
+\contentsline {subsection}{\nonumberline Handling Categorical Features}{20}{subsection*.31}%
+\contentsline {subsection}{\nonumberline Train-Test-Split}{21}{subsection*.33}%
+\contentsline {section}{\nonumberline Predictive Classification Models}{22}{section*.35}%
+\contentsline {subsection}{\nonumberline Logistic Regression}{23}{subsection*.37}%
+\contentsline {subsubsection}{\nonumberline Basic Logistic Classifier}{23}{subsubsection*.39}%
+\contentsline {subsubsection}{\nonumberline Logistic Regression with Backward Stepwise Search}{25}{subsubsection*.41}%
+\contentsline {subsubsection}{\nonumberline Logistic Regression with Shrinkage Method}{27}{subsubsection*.43}%
+\contentsline {subsubsection}{\nonumberline Comparison of Logistic Classifiers}{29}{subsubsection*.45}%
+\contentsline {subsection}{\nonumberline Another Classification Model}{31}{subsection*.47}%
+\contentsline {section}{\nonumberline Model Results}{31}{section*.49}%
+\contentsline {subsection}{\nonumberline Performance Metrics and Confusion Matrix}{31}{subsection*.51}%
+\providecommand \tocbasic@end@toc@file {}\tocbasic@end@toc@file 
