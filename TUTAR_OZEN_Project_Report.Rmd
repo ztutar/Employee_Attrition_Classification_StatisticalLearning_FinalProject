@@ -2,7 +2,7 @@
 title: "Statistical Learning Final Project"
 subtitle: "Employee Attrition Classification"
 
-author: [Zeynep TUTAR - 2106038, Aysenur Oya ÖZEN - 0000000]
+author: [Zeynep TUTAR - 2106038, Aysenur Oya ÖZEN - 2107501]
 
 date: "09-07-2024"
 toc: true
@@ -64,7 +64,7 @@ knitr::opts_chunk$set(echo = TRUE,
 def.chunk.hook  <- knitr::knit_hooks$get("chunk")
 knitr::knit_hooks$set(chunk = function(x, options) {
   x <- def.chunk.hook(x, options)
-  paste0("\n \\", "small","\n\n", x, "\n\n \\normalsize")
+  paste0("\n \\", "small","\n\n", x, "\n\n \\small")
 })
 ```
 
@@ -179,6 +179,7 @@ library(glmnet)
 library(dplyr)
 library(pROC)
 library(knitr)
+library(leaps)
 ```
 
 ```{r summary}
@@ -212,7 +213,6 @@ data <- data[, !names(data) %in% "Company.Tenure"]
 ```{r num_cat}
 
 numeric_vars <- sapply(data, is.numeric)
-
 categoric_vars <- sapply(data, function(x) is.factor(x) || is.character(x))
 
 ```
@@ -221,9 +221,7 @@ categoric_vars <- sapply(data, function(x) is.factor(x) || is.character(x))
 
 ```{r NA_val}
 # Missing Values --- No null Values
-na_summary <- sapply(data, function(x) sum(is.na(x)))
-na_summary
-
+sapply(data, function(x) sum(is.na(x)))
 ```
 
 ### Categorical Features
@@ -251,37 +249,6 @@ for (cat_var in categoric_var_names) {
 par(mfrow = c(1, 1)) 
 ```
 
-### Numeric Features
-
-```{r num_f}
-# Numeric value summary
-summary(data[, numeric_vars])
-
-# Numeric feature names
-numeric_var_names <- names(data)[numeric_vars]
-
-# Numeric features--hist graph
-plots_per_page <- 6
-num_plots <- length(numeric_var_names)
-num_pages <- ceiling(num_plots / plots_per_page)
-
-plot_index <- 1
-for (page in 1:num_pages) {
-  par(mfrow = c(3, 2))  
-  for (i in 1:plots_per_page) {
-    if (plot_index > num_plots) break
-    num_var <- numeric_var_names[plot_index]
-    hist(data[[num_var]], main=paste(num_var, "Distribution"), xlab=num_var, col="firebrick4", breaks=30)
-    
-    plot_index <- plot_index + 1
-  }
-}
-```
-
-```{r, include=FALSE}
-par(mfrow = c(1, 1))
-```
-
 ### Target Values
 
 ```{r target}
@@ -306,24 +273,38 @@ pie(attrition_df$Count, labels=paste(attrition_df$Attrition, " - ", attrition_df
 par(mfrow = c(1, 1)) 
 ```
 
+### Numeric Features
 
-```{r}
-# Density plots
-cat_var <- "Attrition"
+```{r num_f}
 
-plot_index <- 1
-for (page in 1:num_pages) {
-  par(mfrow = c(2, 3))  
-  for (i in 1:plots_per_page) {
-    if (plot_index > num_plots) break
-    num_var <- numeric_var_names[plot_index]
-    plot(density(data[[num_var]][data[[cat_var]] == "Left"], na.rm = TRUE), col="red", main=paste(num_var, "Density \nby", cat_var), xlab=num_var, ylab="Density")
-    lines(density(data[[num_var]][data[[cat_var]] == "Stayed"], na.rm = TRUE), col="blue")
-    legend("topright", legend=c("Left", "Stayed"), col=c("red", "blue"), lty=1, cex=0.8)
-    plot_index <- plot_index + 1
-  }
+numeric_var_names <- names(data)[numeric_vars]
+
+# Copy Data
+data_detailed<- data
+
+# Define bins for numeric values
+data_detailed$Age_Cat <- cut(data_detailed$Age, breaks = c(18, 25, 35, 45, 55, 60), labels = c("18-25", "25-35", "35-45", "45-55", "55-60"), right = FALSE)
+data_detailed$MonthlyIncome_Cat <- cut(data_detailed$Monthly.Income, breaks = c(0, 3000, 6000, 9000, 12000, 15000,18000), labels = c("0-3000", "3000-6000", "6000-9000", "9000-12000", "12000-15000","15000+"), right = FALSE)
+data_detailed$DistanceFromHome_Cat <- cut(data_detailed$Distance.from.Home, breaks = c(0, 20, 40, 60, 80, 100), labels = c("0-20", "20-40", "40-60", "60-80", "80-100"), right = FALSE)
+data_detailed$YearsAtCompany_Cat <- cut(data_detailed$Years.at.Company, breaks = c(0, 10, 20, 30, 40, 50,60), labels = c("0-10", "10-20", "20-30", "30-40", "40-50","50-60"), right = FALSE)
+
+
+
+exclude_columns <- c("Age", "Monthly.Income", "Distance.from.Home", "Years.at.Company", "Attrition")
+data_corr <- data_detailed[, !names(data_detailed) %in% exclude_columns]
+data_corr <- data_corr[, c(setdiff(names(data_corr), "Attrition"))]
+
+# Plotting with target feature after transform numeric features into categorical
+par(mfrow = c(3, 4))  
+for (col in setdiff(names(data_detailed), exclude_columns)) {
+  table_left <- table(data_detailed[data_detailed$Attrition == "Left", col])
+  table_stayed <- table(data_detailed[data_detailed$Attrition == "Stayed", col])
+  
+  barplot(rbind(table_left, table_stayed), beside = TRUE,
+          main = paste(col, "Distribution by Attrition"),
+          xlab = col,
+          col = c("firebrick4", "rosybrown2"))
 }
-
 ```
 
 ```{r, include=FALSE}
@@ -332,31 +313,21 @@ par(mfrow = c(1, 1))
 
 ### Outliers
 
-```{r outliers}
-# Outlier Analysis 
-par(mfrow = c(2, 3)) 
-for (num_var in numeric_var_names) {
-  boxplot(data[[num_var]], main=paste(num_var, "Boxplot"), xlab=num_var, col="firebrick4")
-}
-```
-
-```{r, include=FALSE}
-par(mfrow = c(1, 1))
-```
-
-
 ```{r target-num}
 
 # Target Visualization with Numeric features Outlier Check -- boxplot
 cat_var <- "Attrition"
 
+plots_per_page <- 6
+num_plots <- length(numeric_var_names)
+num_pages <- ceiling(num_plots / plots_per_page)
 plot_index <- 1
 for (page in 1:num_pages) {
   par(mfrow = c(2, 3))  
   for (i in 1:plots_per_page) {
     if (plot_index > num_plots) break
     num_var <- numeric_var_names[plot_index]
-    boxplot(data[[num_var]] ~ data[[cat_var]], main=paste(num_var, "\nby", cat_var), xlab=cat_var, ylab=num_var, col="firebrick4")
+    boxplot(data[[num_var]] ~ data[[cat_var]], main=paste(num_var, "\nby", cat_var), xlab=cat_var, ylab=num_var, col=c("firebrick4","rosybrown2"))
     plot_index <- plot_index + 1
   }
 }
@@ -365,8 +336,6 @@ for (page in 1:num_pages) {
 ```{r, include=FALSE}
 par(mfrow = c(1, 1))
 ```
-
-
 
 ```{r}
 # Function to identify outliers using IQR
@@ -383,11 +352,10 @@ outliers_list <- list()
 for (var in numeric_var_names) {
   outliers <- identify_outliers(data[[var]])
   outliers_list[[var]] <- outliers
-  cat("\nOutliers in", var, ":\n")
-  print(outliers)
+  cat("\nOutlier values in", var, "are between:\n")
+  print(sort(unique(outliers)))
 }
 ```
-
 
 ```{r}
 # Plot histograms and highlight outliers
@@ -456,7 +424,8 @@ corrplot(cor_matrix, method = 'number', type = "upper", tl.col = "black", tl.srt
 
 # Data Preparation
 
-After completing the data analysis steps, it is necessary to prepare the data for model development.
+After completing the data analysis steps, it is necessary to prepare the
+data for model development.
 
 ## Handling Categorical Features
 
@@ -479,6 +448,9 @@ data$Performance.Rating <- performance.map[as.numeric(data$Performance.Rating)]
 level.map <- c('Entry'= 1, 'Mid'= 2, 'Senior'= 3)
 data$Job.Level <- level.map[as.numeric(data$Job.Level)]
 
+#education.map <- c('High School'= 1, 'Associate Degree'= 2, 'Bachelor’s Degree'= 3, 'Master’s Degree'= 4, 'PhD'= 5)
+#data$Education.Level <- education.map[as.numeric(data$Education.Level)]
+
 reputation.map <- c('Poor'= 1, 'Fair'= 2, 'Good'= 3, 'Excellent'= 4)
 data$Company.Reputation <- reputation.map[as.numeric(data$Company.Reputation)]
 
@@ -497,6 +469,14 @@ data_numeric <- as.data.frame(data_numeric)[,-1]  # -1 to remove the intercept c
 
 ```
 
+## Normalization
+
+```{r normalize}
+normalize <- function(x) {return ((x - min(x)) / (max(x) - min(x)))}
+
+data_normalized <- as.data.frame(lapply(data_numeric, normalize))
+```
+
 ## Train-Test-Split
 
 Before splitting the data into training and test, first features and
@@ -504,15 +484,15 @@ target should be defined.
 
 ```{r x_y_split}
 # Splitting data into features and target:
-X <- data_numeric[, !(colnames(data_numeric) %in% c("Employee.ID", "AttritionStayed"))]
+X <- data_normalized[, !(colnames(data_normalized) %in% c("Employee.ID", "AttritionStayed"))]
 
-y <- data_numeric$AttritionStayed
+y <- data_normalized$AttritionStayed
 ```
 
 Now, we can split the dataset for modelling.
 
 ```{r train_test_split}
-set.seed(42)
+set.seed(123)
 
 trainIndex <- sample(1:nrow(X), 0.8*nrow(X))
 
@@ -528,21 +508,21 @@ y.test <- y[-trainIndex]
 Before moving to modelling step, it is beneficial to check the
 dimensions and balance of the datasets.
 
-```{r sanity_check}
-# Number of samples in train data
-dim(X.train)
-train.size <- dim(X.train)[1]
+-   Number of samples in train data: `r dim(X.train)[1]`
 
-# Number of samples in test data
-dim(X.test)
-test.size <- dim(X.test)[1]
+    -   Proportion of stayed employees for train data:
+```{r}
+kable(prop.table(table(y.train)))
+```
+        
 
-# Proportion of stayed employees for train data
-prop.table(table(y.train))
+-   Number of samples in test data: `r dim(X.test)[1]`
 
-# Proportion of stayed employees for test data
+    -   Proportion of stayed employees for test data:
+```{r}
 prop.table(table(y.test))
 ```
+        
 
 We can observe that the train and test datasets are balanced within
 themselves. Also the train data is representative of test data.
@@ -569,24 +549,21 @@ The logistic regression model estimates the odds of the dependent
 variable occurring and applies the logit (log-odds) transformation to
 express this relationship.
 
-$$
-g(\pi_i) = \text{logit}(\pi_i) = \log \left( \frac{\pi_i}{1 - \pi_i} \right)     \in (-\infty, +\infty)
-$$
 
 ### Basic Logistic Classifier
 
 ```{r}
 # First of all we check the model statistics with all the features
 glm.FULL <- glm(y.train ~ ., data = X.train, family = binomial)
-
 summary(glm.FULL)
 ```
 
-
-The above model statistics indicate that p-value of Employee Recognition is above 0.5 indicating that this feature is insignificant to the results. Additionally, some Job.Roles and Monthly. Income also have high p-values indicating that their effect on
-Attrition is less significant compared to other features. However, for
-now we would like to keep all the features in the model and apply
-feature selection later.
+The above model statistics indicate that p-value of Employee Recognition
+is above 0.5 indicating that this feature is insignificant to the
+results. Additionally, some Job.Roles and Monthly. Income also have high
+p-values indicating that their effect on Attrition is less significant
+compared to other features. However, for now we would like to keep all
+the features in the model and apply feature selection later.
 
 In order to understand how well the model fits the data we can make use
 of $R^2$ statistics. $R^2$ provides an indication of how well the
@@ -610,9 +587,9 @@ R2 <- 1 - (summary(glm.FULL)$deviance/summary(glm.FULL)$null.deviance)
 R2
 ```
 
-With the full model the value of $R^2$ 0.2352228 indicates that
-approximately 23.52% of the variance in the target can be explained by
-the features in the model. Since 23.52% is relatively low, it suggests
+With the full model the value of $R^2$ `r R2` indicates that
+approximately `r R2*100`% of the variance in the target can be explained by
+the features in the model. Since `r R2*100`% is relatively low, it suggests
 that the model is not capturing much of the underlying pattern in the
 data.
 
@@ -634,8 +611,7 @@ multicollinearity. A few variables have VIF values between 1 and 5,
 suggesting moderate multicollinearity, which may not pose serious issues
 but should be monitored. These variables include Job.RoleTechnology,
 Job.RoleHealthcare, Monthly.Income, Job.RoleFinance,
-Marital.StatusSingle, Marital.StatusMarried, Job.RoleMedia and
-Years.at.Company. These are mostly dummy features of nominal variables
+Marital.StatusSingle and Marital.StatusMarried. These are mostly dummy features of nominal variables
 and dummy variables are often correlated because they represent
 categories of the same nominal variable.
 
@@ -650,30 +626,26 @@ performance.
 We can use the step() function to perform backward stepwise search. As a
 regularization criteria we can either use BIC or AIC. But BIC statistic
 generally places a heavier penalty on models with many variables, and
-hence results in the selection of smaller models than AIC. In this case,
-the model has moderate amount of variables so we can use AIC statistic.
-Since already one dummy variable for each category is dropped, removing
-additional dummy variables can lead to loss of information so we need to
-be cautious.
+hence results in the selection of smaller models than AIC. 
 
 ```{r step_back}
 # Backward Stepwise Search with AIC statistics
-glm.BACKWARD <- step(glm.FULL, direction="backward", k=2, trace=0, steps=20)
+glm.BACKWARD <- step(glm.FULL, direction="backward", k=log(nrow(X.train)), trace=0, steps=100)
 summary(glm.BACKWARD)
 
-vif.BAKWARD <- data.frame(features = names(vif(glm.BACKWARD)), VIF = vif(glm.BACKWARD),row.names = NULL)
-
-vif.BAKWARD[order(-vif.BAKWARD$VIF), ]
-
+vif.BACKWARD <- data.frame(features = names(vif(glm.BACKWARD)), VIF = vif(glm.BACKWARD),row.names = NULL)
+vif.BACKWARD[order(-vif.BACKWARD$VIF), ]
 ```
 
 It looks like backward stepwise search dropped "Job.RoleFinance",
-"Job.RoleHealthcare", "Job.RoleTechnology" and "Employee.Recognition" from the model. These features were also the ones with highest p-values so it seems logical. But oddly the model kept the "Job.RoleMedia" feature so this tells us that having a job role in Media may be more significant to employee Attrition than other job roles for this dataset.
+"Job.RoleHealthcare", "Job.RoleTechnology" and "Employee.Recognition"
+from the model. These features were also the ones with highest p-values
+so it seems logical. But oddly the model kept the "Job.RoleMedia"
+feature so this tells us that having a job role in Media may be more
+significant to employee Attrition than other job roles for this dataset.
 
-Although we decreased the VIF scores, p-values and AIC score,
-unfortunately, RSS increased and $R^2$ dropped to 0.2352002. So, the
-models ability to capture the underlying pattern within the dataset
-decreased.
+With backward feature selection we were able to decrease the VIF scores, p-values and AIC score.
+Although $R^2$ slightly decreased to `r 1 - (summary(glm.BACKWARD)$deviance/summary(glm.BACKWARD)$null.deviance)`, this is expectable since the number of features in the model decreased. But most importantly we decreased the variance inflation factor of the model so the model is more stable.
 
 ### Logistic Regression with Shrinkage Method
 
@@ -692,31 +664,33 @@ most used shrinkage methods are Ridge Regression and Lasso Regression.
     yielding sparse models by retaining only the most important
     features.
 
--   Elastic Net is a hybrid regularization technique that includes both the Ridge
-    and Lasso penalties, allowing for variable selection (like Lasso) and
-    handling multicollinearity (like Ridge). It aims to incorporate the
-    strengths of both methods, providing a more flexible approach.
+-   Elastic Net is a hybrid regularization technique that includes both
+    the Ridge and Lasso penalties, allowing for variable selection (like
+    Lasso) and handling multicollinearity (like Ridge). It aims to
+    incorporate the strengths of both methods, providing a more flexible
+    approach.
 
 Choosing the value of $lambda$ (the tuning parameter) is crucial because
 it determines the strength of the penalty applied to the coefficients.
-We can choose the best value of $lambda$ using k-fold cross-validation method.
-
+We can choose the best value of $lambda$ using k-fold cross-validation
+method.
 
 ```{r NET}
 # Elastic Net Regression with alpha=0.05 (more weight on Ridge Reg.)
-set.seed(42)
+set.seed(123)
 
 glm.ELNET <- cv.glmnet(as.matrix(X.train), y.train, alpha = 0.05, 
                        family = "binomial", type.measure = "class")
-
-plot(glm.ELNET)
-
 best.lamda <- glm.ELNET$lambda.min
+plot(glm.ELNET)
 ```
 
 ### Comparison of Logistic Classifiers
 
-For Logistic Regression we defined 3 Logistic classifiers. In order to identify the best model we can compare their performance on the test sets to see how well they captured the underlying pattern of the data and their ability to generalize to new data.
+For Logistic Regression we defined 3 Logistic classifiers. In order to
+identify the best model we can compare their performance on the test
+sets to see how well they captured the underlying pattern of the data
+and their ability to generalize to new data.
 
 ```{r log_compare}
 # 1. Basic Logistic Classifier
@@ -730,7 +704,12 @@ glm.ELNET.predict <- predict(glm.ELNET, newx = as.matrix(X.test),
                              type = "response", s = best.lamda)
 ```
 
-We can use ROC curve and AUC values to compare the models.The ROC curve is a tool for assessing the performance of binary classification models, plotting true positive rate against false positive rate at various thresholds. The Area Under the Curve (AUC) provides a measure of the model's ability to predict the target values, with higher values indicating better performance.
+We can use ROC curve and AUC values to compare the models. The ROC curve
+is a tool for assessing the performance of binary classification models,
+plotting true positive rate against false positive rate at various
+thresholds. The Area Under the Curve (AUC) provides a measure of the
+model's ability to predict the target values, with higher values
+indicating better performance.
 
 ```{r roc_auc, echo=FALSE, fig.keep='last'}
 
@@ -756,9 +735,10 @@ legend("bottomright",legend=c("glm.FULL","glm.BACKWARD","glm.ELNET"),
 
 
 ```
-Although the results are very close, the AUC values indicate that the logistic classifier model with all the features outperformed backward and shrinkage models in means of better generalization. 
 
-To better analyse the difference between the model performances we can calculate and compare the evaluation metrics.
+Although the AUC values are same, to better analyse the difference between the model performances we can
+calculate and compare the evaluation metrics.
+
 
 ```{r logreg_eval_func}
 # Function to evaluate prediction models at different thresholds
@@ -804,8 +784,8 @@ evaluate.model.performance <- function(predictions, y.test, thresholds, title) {
 }
 ```
 
-```{r logreg_evals, echo=FALSE}
-thresholds <- c(0.3, 0.4, 0.5, 0.6, 0.7)
+```{r logreg_evals}
+thresholds <- c(0.2, 0.3, 0.4, 0.5, 0.6)
 
 # 1. Basic Logistic Classifier
 evaluate.model.performance(glm.FULL.predict, y.test, thresholds, "glm.FULL")
@@ -818,9 +798,19 @@ evaluate.model.performance(glm.ELNET.predict, y.test, thresholds, "glm.ELNET")
 
 ```
 
-All of the models have the highest F1 score at threshold level 0.4. And F1 score with 0.4 threshold for glm.ELNET is higher than other models on the test set.
+All of the models have the highest F1 score at threshold level 0.4. And
+F1 score with 0.4 threshold for glm.ELNET is higher than other models on
+the test set. These results indicate that the model with Elastic Net regularization is better in generalization. Therefore we can select the glm.ELNET.predict as the best prediction for logistic regression model.
 
 ## Another Classification Model
+
+
+
+
+
+
+
+
 
 # Model Results
 
