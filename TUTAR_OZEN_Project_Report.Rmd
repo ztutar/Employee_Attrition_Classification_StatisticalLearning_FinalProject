@@ -117,13 +117,11 @@ The features of the dataset are presented below:
     and Media.
 
 -   **Work-Life Balance:** The employee's perceived balance between work
-    and personal life, (Poor, Below Average, Good, Excellent)
+    and personal life
 
--   **Job Satisfaction:** The employee's satisfaction with their job:
-    (Very Low, Low, Medium, High)
+-   **Job Satisfaction:** The employee's satisfaction with their job
 
--   **Performance Rating:** The employee's performance rating: (Low,
-    Below Average, Average, High)
+-   **Performance Rating:** The employee's performance rating
 
 -   **Number of Promotions:** The total number of promotions the
     employee has received.
@@ -132,36 +130,32 @@ The features of the dataset are presented below:
     workplace, in miles.
 
 -   **Education Level:** The highest education level attained by the
-    employee: (High School, Associate Degree, Bachelor’s Degree,
-    Master’s Degree, PhD)
+    employee
 
--   **Marital Status:** The marital status of the employee: (Divorced,
-    Married, Single)
+-   **Marital Status:** The marital status of the employee
 
--   **Job Level:** The job level of the employee: (Entry, Mid, Senior)
+-   **Job Level:** The job level of the employee
 
--   **Company Size:** The size of the company the employee works for:
-    (Small,Medium,Large)
+-   **Company Size:** The size of the company the employee works for
 
 -   **Company Tenure:** The total number of years the employee has been
     working in the industry.
 
--   **Remote Work:** Whether the employee works remotely: (Yes or No)
+-   **Remote Work:** Whether the employee works remotely
 
 -   **Leadership Opportunities:** Whether the employee has leadership
-    opportunities: (Yes or No)
+    opportunities
 
 -   **Innovation Opportunities:** Whether the employee has opportunities
-    for innovation: (Yes or No)
+    for innovation
 
 -   **Company Reputation:** The employee's perception of the company's
-    reputation: (Very Poor, Poor,Good, Excellent)
+    reputation
 
 -   **Employee Recognition:** The level of recognition the employee
-    receives:(Very Low, Low, Medium, High)
+    receives
 
--   **Attrition:** Whether the employee has left the company, encoded as
-    0 (stayed) and 1 (Left).
+-   **Attrition:** Whether the employee has left the company
 
 # Data Analysis
 
@@ -292,9 +286,9 @@ earn within this range.The distance from home distribution is relatively
 uniform, indicating that employees live at various distances from their
 workplace.
 
-```{r data_numdist}
+```{r data_numdist, out.width="65%"}
 # Numerical variables distribution
-par(mfrow = c(3, 2), mar=c(3, 3, 2, 1))
+par(mfrow = c(2, 3), mar=c(3, 3, 2, 1))
 for (num_var in numeric_var_names) {
   hist(data[[num_var]], main=paste(num_var),
        xlab="", ylab="", col="firebrick4", breaks=30, 
@@ -312,7 +306,7 @@ highlighting the need for strategies to improve retention. Understanding
 the factors contributing to attrition could help in developing targeted
 initiatives to retain employees and enhance overall workforce stability.
 
-```{r data_targetdist, out.width="75%"}
+```{r data_targetdist, out.width="65%"}
 
 # Target value distribution
 par(mfrow = c(1, 2)) 
@@ -326,7 +320,7 @@ attrition_df$Percentage <- round(100 * attrition_df$Count / sum(attrition_df$Cou
 pie(attrition_df$Count, labels=paste(attrition_df$Attrition, " - ",
 attrition_df$Percentage, "%"),
 col=c("firebrick4","rosybrown2"),
-main="Attrition Distribution", cex=1.5, radius=1)
+main="Attrition Distribution", cex=1, radius=1)
 ```
 
 7.  Outlier Analysis
@@ -347,7 +341,7 @@ outliers among those who leave suggests that other factors, such as job
 satisfaction or career development opportunities, might be influencing
 their decision to leave.
 
-```{r data_outlier, out.width="80%"}
+```{r data_outlier, out.width="75%"}
 # Boxplot of outliers
 par(mfrow = c(2, 3))  
 for (num_var in numeric_var_names) {
@@ -457,7 +451,7 @@ impact on turnover. Understanding these patterns helps in developing
 targeted strategies to improve employee satisfaction and reduce turnover
 rates.
 
-```{r data_transform}
+```{r data_transform, out.width="75%"}
 # Define bins for numerical variables
 data_detailed$Age_Cat <- cut(data_detailed$Age, breaks = c(18, 25, 35, 45, 55, 60), 
 labels = c("18-25", "25-35", "35-45", "45-55", "55-60"), right = FALSE)
@@ -478,7 +472,7 @@ data_corr <- data_detailed[, !names(data_detailed) %in% exclude_columns1]
 data_corr <- data_corr[, c(setdiff(names(data_corr), "Attrition"), "Attrition")]
 
 # Plotting with target feature after transform numerical variables into categorical
-par(mfrow = c(4,6),  mar = c(3, 3, 2, 2) + 0.1) 
+par(mfrow = c(3,4),  mar = c(3, 3, 2, 2) + 0.1) 
 for (col in setdiff(names(data_detailed), exclude_columns)) {
   table_left <- table(data_detailed[data_detailed$Attrition == "Left", col])
   table_stayed <- table(data_detailed[data_detailed$Attrition == "Stayed", col])
@@ -521,7 +515,7 @@ However, it is important to note that this method may not capture the
 full complexity of relationships that exist in the original numeric
 data.
 
-```{r data_corr, out.width="75%"}
+```{r data_corr, out.width="80%"}
 # Ordinal mappings
 balance.map <- c('Poor'= 1, 'Fair'= 2, 'Good'= 3, 'Excellent'= 4)
 data_corr$Work.Life.Balance <- balance.map[as.character(data_corr$Work.Life.Balance)]
@@ -657,13 +651,13 @@ dimensions and balance of the datasets.
 
 -   Proportion of stayed employees for train data:
 
-```{r}
+```{r, echo=FALSE}
 prop.table(table(y.train))
 ```
 
 -   Proportion of stayed employees for test data:
 
-```{r}
+```{r, echo=FALSE}
 prop.table(table(y.test))
 ```
 
@@ -987,51 +981,5 @@ qda.model
 evaluate.model.performance(qda.predict, y.test)
 ```
 
-# Model Results
 
-## Performance Metrics and Confusion Matrix
-
-
-
-```{r}
-# Function for confusion matrix and other performance metrics
-perf.measure <- function(true.values, pred.values,  lab.pos = 1){
-    # compute the confusion matrix and number of units
-  conf.matrix <- table(pred.values, true.values)
-  n <- sum(conf.matrix)
-  # force the label of positives to be a character string
-  lab.pos <- as.character(lab.pos)
-  # obtain the label of negatives
-  lab <- rownames(conf.matrix)
-  lab.neg <- lab[lab != lab.pos]
-  # extract relevant quantities from the confusion matrix
-  TP <- conf.matrix[lab.pos, lab.pos]
-  TN <- conf.matrix[lab.neg, lab.neg]
-  FP <- conf.matrix[lab.pos, lab.neg]
-  FN <- conf.matrix[lab.neg, lab.pos]
-  P     <- TP + FN
-  N     <- FP + TN
-  P.ast <- TP + FP
-  # compute the performance measures
-  OER <- (FP+FN)/n
-  PPV <- TP/P.ast
-  TPR <- TP/P
-  F1  <- 2*PPV*TPR/(PPV+TPR)
-  TNR <- TN/N
-  FPR <- FP/N
-  return(list(overall.ER = OER, PPV=PPV, TPR=TPR, F1=F1, TNR=TNR, FPR=FPR))
-}
-```
-
-```{r}
-# Confusion matrix for glm.ELNET
-
-# Use best threshold for prediction (0 or 1)
-Threshold <- 0.4
-glm.ELNET.predict.factor <- as.factor(ifelse(glm.ELNET.predict >= Threshold, 1, 0))
-
-
-#PM <- perf.measure(test.data$AttritionStayed, glm.ELNET.predict.factor, lab.pos = "Stayed")
-#PM
-```
 # Conclusion
