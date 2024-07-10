@@ -1,0 +1,294 @@
+---
+title: "Aysenur Oya Ozen - 2107501"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Exploraty Data Anlaysis (EDA) Step by Step
+
+```{r libraries, results='hide'}
+# Libraries
+library(corrplot)
+library(pROC)
+library(class)
+library(e1071)
+library(MASS)
+```
+
+```{r data_import}
+# import dataset
+data <- read.csv("C://Users//ayse-//Downloads//Employee Attrition Classification Dataset//Employee Attrition Classification Dataset//data.csv")
+
+# Copy Data for further Analysis
+data_detailed<- data
+```
+
+## 1.First Insights from Data
+```{r data_stat}
+# Descriptive statistics
+str(data)
+```
+
+## 2.Removing Columns
+Employee.ID and Company.Tenure dropped as they are not useful for predictive modeling.Company.Tenure column gives logically incorrect numerical values.
+```{r data_rmv}
+# Drop Employee Id and Company.Tenure
+data <- data[, !names(data) %in% "Employee.ID"]
+data <- data[, !names(data) %in% "Company.Tenure"]
+data_detailed <- data_detailed[, !names(data_detailed) %in% "Employee.ID"]
+data_detailed <- data_detailed[, !names(data_detailed) %in% "Company.Tenure"]
+```
+
+## 3.Changing Features Type
+Some numeric columns are converted that represent categories (e.g., Number.of.Promotions, Number.of.Dependents) to factors to treat them appropriately in analyses and visualizations.
+```{r data_cat}
+# Even they are numerical variables they represents categorical variables
+data$Number.of.Promotions <- factor(data$Number.of.Promotions)
+data$Number.of.Dependents <- factor(data$Number.of.Dependents)
+data_detailed$Number.of.Promotions <- factor(data_detailed$Number.of.Promotions)
+data_detailed$Number.of.Dependents <- factor(data_detailed$Number.of.Dependents)
+```
+
+## 4.Numerical and Categorical Variables Seperation
+Numerical and categorical variables were separated for targeted analysis. Summary statistics were then used to provide a quick overview of the distribution of numerical features.
+
+Summary statistics for numerical variables reveal that the ages of employees range from 18 to 59,indicating a workforce that spans multiple generations.Employees have been with the company for a wide range of 1 to 51 years suggesting a mix of new and long-term staff.Monthly incomes vary widely, from 1,226 to 16,149 units, indicating financial situation specific to the individual, industry or other variables. Lastly, the distance from home ranges from 1 to 99 units, which suggests that while some employees live close to their workplace, others may have longer commutes. 
+This variability highlights the diverse nature of the workforce.
+```{r data_catnum}
+# Numerical and categorical variables separation
+numeric_vars <- sapply(data, is.numeric)
+categoric_vars <- sapply(data, function(x) is.factor(x) || is.character(x))
+
+# Taking names from numerical and categorical variables for distribution graph
+categoric_var_names <- names(data)[categoric_vars]
+numeric_var_names <- names(data)[numeric_vars]
+
+# Numeric values summary
+summary(data[, numeric_vars])
+```
+
+## 5.Missing Values Analysis
+No missing values were found in the data set, so there was no need to apply removing of null values operation.
+```{r data_missing}
+# Checking if there are missing values in the entire dataset
+total_na <- sum(is.na(data))
+cat("Total number of missing values:", total_na, "\n")
+```
+
+## 6.Categorical Variables Distribution
+Inferences from the bar charts of categorical variables:
+The fact that the gender distribution is almost equal shows that there is no gender bias in the data.Job roles skew towards technology and media, indicating a focus on these sectors.Most employees rate their work-life balance as good or excellent; This indicates high satisfaction; however, job satisfaction varies, with some rating it as low or medium.Performance ratings are mostly average, indicating a need for better performance management.The fact that most employees have not received any promotions highlights potential career development issues.Overtime is rare, indicating manageable workloads.Education levels vary, and many have bachelor's degrees.Marital status indicates more married workers.Job levels are mostly entry and intermediate, indicating a younger workforce.Company size is evenly distributed, indicating different operational scales.The rarity of remote work points to traditional office culture.Limited leadership and innovation opportunities suggest areas for development.The company's reputation is mostly good, but employee recognition is low to moderate, indicating room for improvement.
+```{r data_catdist}
+# Categorical variables distribution
+par(mfrow = c(3, 3),  mar = c(5, 4, 2, 2) + 0.1) 
+for (cat_var in categoric_var_names) {
+  barplot(table(data[[cat_var]]), main=paste(cat_var), 
+          ylab="Count", col="skyblue", cex.names=0.7, las=2, 
+          cex.main=0.9, cex.axis=0.8)
+}
+```
+
+```{r, include=FALSE}
+par(mfrow = c(1, 1)) 
+```
+
+## 7.Numerical Values Distribution
+Inferences from the histograms for the numerical variables:
+The age distribution is fairly uniform, indicating a wide age range among employees.The years at the company show a right-skewed distribution, with most employees having shorter tenures and fewer employees staying beyond 30 years.Monthly income has a roughly normal distribution, peaking around 5,000 to 10,000 units, suggesting that most employees earn within this range.The distance from home distribution is relatively uniform, indicating that employees live at various distances from their workplace.
+```{r data_numdist}
+# Numerical variables distribution
+par(mfrow = c(2, 2), mar=c(3, 3, 2, 1))
+for (num_var in numeric_var_names) {
+  hist(data[[num_var]], main=paste(num_var),
+       xlab="", ylab="", col="skyblue", breaks=30, 
+       cex.main=0.8, cex.axis=0.8, cex.lab=0.8)
+}
+```
+
+## 8.Target Value Distribution
+The pie chart depicting attrition distribution shows that 47.5% of employees left the company, while 52.5% stayed. This indicates a relatively balanced split between those who left and those who remained. Such a near-equal distribution suggests that significant turnover, highlighting the need for strategies to improve retention. Understanding the factors contributing to attrition could help in developing targeted initiatives to retain employees and enhance overall workforce stability.
+```{r data_targetdist}
+# Target values distribution with pie chart
+attrition_table <- table(data$Attrition)
+attrition_df <- as.data.frame(attrition_table)
+colnames(attrition_df) <- c("Attrition", "Count")
+attrition_df$Percentage <- round(100 * attrition_df$Count / sum(attrition_df$Count), 1)
+pie(attrition_df$Count, labels=paste(attrition_df$Attrition, " - ",
+attrition_df$Percentage, "%"),
+col=c("darkolivegreen1", "firebrick2"),
+main="Attrition Distribution", cex=0.9, radius=1)
+```
+
+## 9. Outlier Analysis
+The second boxplots show the relationship between attrition and various numerical variables:
+There are more outliers for longer tenures among employees who stayed, suggesting that employees who remain with the company for extended periods are less likely to leave.
+Monthly income distributions are almost equal for both groups, but there are more high-income outliers among those who left.This suggests that while average income may not differ much between those who left and stayed, higher earners are more likely to leave.
+Attrition appears to be more closely linked with tenure at the company and, to some extent, with the distribution of high-income outliers. Shorter tenures are associated with higher attrition rates, and while income levels are generally similar for those who leave and stay, the presence of high-income outliers among those who leave suggests that other factors, such as job satisfaction or career development opportunities, might be influencing their decision to leave. 
+```{r data_outlier}
+# Boxplot of outliers
+par(mfrow = c(2, 2))  
+for (num_var in numeric_var_names) {
+  boxplot(data[[num_var]], main=paste(num_var), 
+          xlab="", col="skyblue",horizontal = TRUE)
+}
+# Boxplots of numeric variables by Attrition
+cat_var <- "Attrition"
+par(mfrow = c(2, 2), mar = c(5, 3, 3, 2) + 0.1, 
+    cex.main = 1, cex.lab = 0.9, cex.axis = 0.9)  
+for (num_var in numeric_var_names) {
+  boxplot(data[[num_var]] ~ data[[cat_var]], main=paste(num_var, "by Attrition"), 
+          xlab="", ylab="", col="skyblue", horizontal = TRUE, 
+          names = c("Left", "Stayed"))
+}
+par(mfrow = c(1, 1))  
+# Function to count outliers using IQR
+count_outliers <- function(x) {
+  Q1 <- quantile(x, 0.25, na.rm = TRUE)
+  Q3 <- quantile(x, 0.75, na.rm = TRUE)
+  IQR <- Q3 - Q1
+  outliers <- x[x < (Q1 - 1.5 * IQR) | x > (Q3 + 1.5 * IQR)]
+  return(length(outliers))
+}
+# Identify and count outliers for each numeric variable
+outlier_counts <- list()
+for (var in numeric_var_names) {
+  outlier_count <- count_outliers(data[[var]])
+  outlier_counts[[var]] <- outlier_count
+  cat("\nNumber of outliers in", var, ":", outlier_count, "\n")
+}
+# Function to identify outliers using IQR
+identify_outliers <- function(x) {
+  Q1 <- quantile(x, 0.25, na.rm = TRUE)
+  Q3 <- quantile(x, 0.75, na.rm = TRUE)
+  IQR <- Q3 - Q1
+  outliers <- which(x < (Q1 - 1.5 * IQR) | x > (Q3 + 1.5 * IQR))  # Return indices
+  return(outliers)
+}
+```
+In methodlogy we used to identify and remove outlier employs the Interquartile Range (IQR).The IQR method was used because it is simple and effective. It focuses on the central 50% of the data, making it less sensitive to extreme values. It works by calculating the range between the first quartile (Q1) and third quartile (Q3) and identifying outliers as values falling below Q1 - 1.5 * IQR or above Q3 + 1.5 * IQR.
+
+Functions are used to count outliers and identify their indices for each numeric variable, subsequently removing rows with outliers to create a non-outlier dataset. Despite this rigorous process, removing outliers did not enhance the model's performance and instead decreased its accuracy. This indicates that the outliers contain valuable information crucial for the model's predictive power. Consequently, it was decided to retain the outliers in the dataset, preserving model accuracy and ensuring effective predictive performance.
+
+```{r data_outlier2, echo=TRUE, results='hide'}
+# Identify and show outliers for each numeric variable and combine them into single vector
+outliers_list <- list()
+all_outlier_indices <- c()
+for (var in numeric_var_names) {
+  outliers <- identify_outliers(data[[var]])
+  outliers_list[[var]] <- outliers
+  all_outlier_indices <- c(all_outlier_indices, outliers)
+  cat("\nOutliers in", var, ":\n")
+  print(outliers)
+}
+
+all_outlier_indices <- unique(all_outlier_indices)
+```
+
+```{r data_outlier3}
+# Remove rows with outliers 
+data_nonoutlier <- data[-all_outlier_indices, ]
+# Print the number of rows removed and the resulting data
+cat("\nTotal number of rows removed:", length(all_outlier_indices), "\n")
+cat("Original dataset rows:", nrow(data), "\n")
+cat("Non-outlier dataset rows:", nrow(data_nonoutlier), "\n")
+```
+
+## 10. Transforming Numerical Variables into Categorical Variables 
+This methodology effectively transforms continuous numeric variables into categorical bins, facilitating better visualization and comparative analysis of attrition. The use of bar charts to compare the distributions of these categories between employees who left and those who stayed provides clear insights into how different factors may influence employee turnover.
+
+Employees who do not work overtime tend to stay more than those who leave, indicating that excessive work hours may contribute to higher attrition rates. Married employees are less likely to leave compared to single employees, suggesting that marital status influences retention. Remote work and higher job levels are associated with lower attrition, emphasizing the value of flexibility and career growth opportunities. A good company reputation and recognition also correlate with lower attrition, highlighting the importance of a positive work environment and employee appreciation. The distribution across education levels, number of dependents, and distance from home shows similar patterns for both those who left and stayed, suggesting these factors have a moderate impact on turnover. Understanding these patterns helps in developing targeted strategies to improve employee satisfaction and reduce turnover rates.
+```{r data_transform}
+# Define bins for numerical variables
+data_detailed$Age_Cat <- cut(data_detailed$Age, breaks = c(18, 25, 35, 45, 55, 60), 
+labels = c("18-25", "25-35", "35-45", "45-55", "55-60"), right = FALSE)
+data_detailed$MonthlyIncome_Cat <- cut(data_detailed$Monthly.Income, 
+breaks = c(0, 3000, 6000, 9000, 12000, 15000,18000), labels = c("0-3000", "3000-6000", "6000-9000", "9000-12000", "12000-15000","15000+"), right = FALSE)
+data_detailed$DistanceFromHome_Cat <- cut(data_detailed$Distance.from.Home, 
+breaks = c(0, 20, 40, 60, 80, 100), 
+labels = c("0-20", "20-40", "40-60", "60-80", "80-100"), right = FALSE)
+data_detailed$YearsAtCompany_Cat <- cut(data_detailed$Years.at.Company, 
+breaks = c(0, 10, 20, 30, 40, 50,60), 
+labels = c("0-10", "10-20", "20-30", "30-40", "40-50","50-60"), right = FALSE)
+
+# Exclude numerical columns
+exclude_columns <- c("Age", "Monthly.Income", "Distance.from.Home", "Years.at.Company", "Attrition")
+exclude_columns1 <- c("Age", "Monthly.Income", "Distance.from.Home", "Years.at.Company")
+# Create data for correlation matrix
+data_corr <- data_detailed[, !names(data_detailed) %in% exclude_columns1]
+data_corr <- data_corr[, c(setdiff(names(data_corr), "Attrition"), "Attrition")]
+
+# Plotting with target feature after transform numerical variables into categorical
+par(mfrow = c(3,2),  mar = c(3, 3, 2, 2) + 0.1) 
+for (col in setdiff(names(data_detailed), exclude_columns)) {
+  table_left <- table(data_detailed[data_detailed$Attrition == "Left", col])
+  table_stayed <- table(data_detailed[data_detailed$Attrition == "Stayed", col])
+  barplot(rbind(table_left, table_stayed), beside = TRUE,
+          main = paste(col),
+          xlab = "",
+          col = c("firebrick2", "darkolivegreen1"),
+          cex.names=0.9, cex.main=0.9, cex.axis=0.9)
+}
+```
+
+## 11. Checking Correlation 
+In order to look at the correlation between variables and their effect on Attrition, ordinal and label encoding are used on categorical variables, followed by generating a correlation matrix and visualizing it. 
+
+Ordinal mapping converts variables with inherent order, such as Work-Life Balance and Job Satisfaction, into numeric values to preserve their ordinal nature, enabling meaningful numerical analysis. Label encoding is applied to unordered categorical variables, converting them into numeric values necessary for numerical analyses.
+
+Additionally, numeric variables were converted to categorical bins previous code and then encoded to avoid issues related to large or small numeric values and to standardize the data format, ensuring consistency in the correlation analysis. By encoding the data, we aim to avoid disproportionate influence from large or small values and ensure each variable contributes equally to the analysis.
+The correlation matrix calculates pairwise correlation coefficients, helping to understand the linear relationships between variables. The correlation plot visually represents these relationships, using colors and numbers to indicate the strength and direction of correlations.So this process prepares the dataset for sophisticated analysis, aids in feature selection, identifies multicollinearity issues, and providing insights into complex variable relationships.
+
+However, it is important to note that this method may not capture the full complexity of relationships that exist in the original numeric data.
+```{r data_corr}
+# Ordinal mappings
+balance.map <- c('Poor'= 1, 'Fair'= 2, 'Good'= 3, 'Excellent'= 4)
+data_corr$Work.Life.Balance <- balance.map[as.character(data_corr$Work.Life.Balance)]
+
+satisfaction.map <- c('Low'= 1, 'Medium'= 2, 'High'= 3, 'Very High'= 4)
+data_corr$Job.Satisfaction <- satisfaction.map[as.character(data_corr$Job.Satisfaction)]
+
+performance.map <- c('Low'= 1, 'Below Average'= 2, 'Average'= 3, 'High'= 4)
+data_corr$Performance.Rating <- performance.map[as.character(data_corr$Performance.Rating)]
+
+level.map <- c('Entry'= 1, 'Mid'= 2, 'Senior'= 3)
+data_corr$Job.Level <- level.map[as.character(data_corr$Job.Level)]
+
+reputation.map <- c('Poor'= 1, 'Fair'= 2, 'Good'= 3, 'Excellent'= 4)
+data_corr$Company.Reputation <- reputation.map[as.character(data_corr$Company.Reputation)]
+
+recognition.map <- c('Low'= 1, 'Medium'= 2, 'High'= 3, 'Very High'= 4)
+data_corr$Employee.Recognition <- recognition.map[as.character(data_corr$Employee.Recognition)]
+
+size.map <- c('Small'= 1, 'Medium'= 2, 'Large'= 3)
+data_corr$Company.Size <- size.map[as.character(data_corr$Company.Size)]
+
+# Perform label encoding for the columns that are not mapped ordinally
+categoric_vars_enc <- sapply(data_corr, function(x) is.factor(x) || is.character(x))
+for (var in names(data_corr)[categoric_vars_enc]) {
+  if (!(var %in% c('Work.Life.Balance', 'Job.Satisfaction', 'Performance.Rating', 
+                   'Job.Level', 'Company.Reputation', 'Employee.Recognition', 'Company.Size'))) {
+    data_corr[[var]] <- as.numeric(factor(data_corr[[var]]))
+  }
+}
+# Define cor matrix
+cor_matrix <- cor(data_corr)
+# Correlation plot
+corrplot(cor_matrix, 
+         method = 'color', type = "upper", tl.col = "black", 
+         tl.srt = 45, addCoef.col = "black", number.cex = 0.5, 
+         tl.cex = 0.5)  
+```
+There is positive correlation between job role and monthly income (0.51), indicating that higher job roles (Media 4,Technology 5) are associated with higher incomes.
+Work-life balance shows a positive correlation with attrition (0.19), suggesting that employees with better work-life balance are more likely to stay.This emphasizes the importance of promoting a healthy work-life balance to reduce turnover rates. 
+There is also a notable negative correlation between marital status and attrition (-0.23), indicating that married employees are less likely to leave the company.
+Remote work has a moderate negative correlation with attrition (-0.22), suggesting that employees who can work remotely are more likely to stay.The flexibility offered by remote work arrangements can be a significant factor in retaining employees, especially in the current global context where remote work has become more prevalent. 
+Job level also shows a notable negative correlation with attrition (-0.32), implying that higher job levels are associated with lower attrition rates.This could be due to increased job satisfaction, responsibility, and rewards that come with higher-level positions, making employees more likely to stay.
+Additionally, there is a weak negative correlation between distance from home and attrition (-0.09), and a very weak positive correlation between years at the company and attrition (0.07). 
+These insights highlight which factors are more strongly related to employee turnover, providing valuable information for developing targeted retention strategies.
+
+

@@ -943,7 +943,7 @@ $if(titlepage-color)$
 \newpagecolor{titlepage-color}\afterpage{\restorepagecolor}
 $endif$
 $if(titlepage-background)$
-\tikz[remember picture,overlay] \node[inner sep=0pt] at (current page.center){\includegraphics[width=\paperwidth]{$titlepage-background$}};
+\tikz[remember picture,overlay] \node[inner sep=0pt] at (current page.center){\vspace{-5cm}{\includegraphics[width=27cm, height=27cm]{$titlepage-background$}}};
 $endif$
 %\newcommand{\colorRule}[3][black]{\textcolor[HTML]{#1}{\rule{#2}{#3}}}
 \begin{center}
@@ -965,25 +965,25 @@ $if(titlepage-background)$
   \vspace{0.5cm}
   \mbox{}\\[2.0cm]
   \null \vspace{\stretch{2}}
-  \large\textsc{$title$} \\
+  \Large\textsc{$title$} \\
 
   % title
   \vspace{3ex}
-  \huge\textbf{\color{UniPDColor}$subtitle$} \\
+  \Huge\textbf{\color{UniPDColor}$subtitle$} \\
   \vspace{\stretch{2.5}}
 
   % authors, advisors etc...
-  \small
+  \normalsize
   \textsc{Authors} \\
-  \large{\textbf{Zeynep TUTAR - 2106038 \\
-      Aysenur Oya ÖZEN - 0000000}} \\
+  \Large{\textbf{Zeynep TUTAR - 2106038 \\
+      Aysenur Oya ÖZEN - 2107501}} \\
   \vspace{\stretch{1}} \null
-  \small
+  \normalsize
   \textsc{Supervisor} \\
-  \large{\textbf{Prof. Alberto ROVERATO}} \\
+  \Large{\textbf{Prof. Alberto ROVERATO}} \\
   
   \vspace{\stretch{1}} \null
-  \large{\textbf{Academic Year: \\2023/2024}}
+  \Large{\textbf{Academic Year: \\2023/2024}}
 }
 $else$
 {

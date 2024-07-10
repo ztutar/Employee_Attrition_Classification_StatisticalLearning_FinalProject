@@ -172,24 +172,18 @@ necessary.
 ```{r libraries}
 # installing required libraries
 library(class)
-library(e1071)
 library(car)
 library(corrplot)
 library(glmnet)
-library(dplyr)
 library(pROC)
 library(knitr)
 library(leaps)
+library(MASS)
 ```
 
 ```{r summary}
-
-# Descriptive statistics of DataFrame
-summary(data)
-
-# Data types of columns
+# Descriptive statistics
 str(data)
-
 ```
 
 ## Data Preprocessing
@@ -197,230 +191,400 @@ str(data)
 To prepare the dataset for further analysis, several data preprocessing
 steps are performed:
 
-1.  Removing features
+1.  Removing Columns 
 
-```{r ID_drop}
-# first column contains Employee IDs, so not necessary for analysis
+Employee.ID and Company.Tenure dropped as they are not useful for predictive modeling. Company.Tenure column gives logically incorrect numerical values.
+
+```{r data_rmv}
+# Drop Employee Id and Company.Tenure
 data <- data[, !names(data) %in% "Employee.ID"]
-
-# EXPLANATION!!!!!!!!!!
 data <- data[, !names(data) %in% "Company.Tenure"]
 
+# Copy Data for further Analysis
+data_detailed <- data
 ```
 
-2.  Numeric and categorical value separation
+2.  Numerical and Categorical Variables Separation
 
-```{r num_cat}
+Numerical and categorical variables were separated for targeted
+analysis. Summary statistics were then used to provide a quick overview
+of the distribution of numerical features.
 
+Summary statistics for numerical variables reveal that the ages of
+employees range from 18 to 59,indicating a workforce that spans multiple
+generations.Employees have been with the company for a wide range of 1
+to 51 years suggesting a mix of new and long-term staff.Monthly incomes
+vary widely, from 1,226 to 16,149 units, indicating financial situation
+specific to the individual, industry or other variables. Lastly, the
+distance from home ranges from 1 to 99 units, which suggests that while
+some employees live close to their workplace, others may have longer
+commutes. This variability highlights the diverse nature of the
+workforce.
+
+```{r data_catnum}
+# Numerical and categorical variables separation
 numeric_vars <- sapply(data, is.numeric)
 categoric_vars <- sapply(data, function(x) is.factor(x) || is.character(x))
 
-```
-
-3.  Handling missing values
-
-```{r NA_val}
-# Missing Values --- No null Values
-sapply(data, function(x) sum(is.na(x)))
-```
-
-### Categorical Features
-
-```{r cat_f}
-
-#Categorical feature names
+# Taking names from numerical and categorical variables for distribution graph
 categoric_var_names <- names(data)[categoric_vars]
+numeric_var_names <- names(data)[numeric_vars]
 
-# Categorical value distributions
-for (var in categoric_var_names) {
-  cat("\nDistribution of", var, ":\n")
-  print(table(data[[var]]))
+# Numeric values summary
+summary(data[, numeric_vars])
+```
+
+3.  Missing Values Analysis
+
+No missing values were found in the data set, so there was no need to
+apply removing of null values operation.
+
+```{r data_missing}
+# Checking if there are missing values in the entire dataset
+total_na <- sum(is.na(data))
+cat("Total number of missing values:", total_na, "\n")
+```
+
+4.  Categorical Variables Distribution
+
+Inferences from the bar charts of categorical variables: The fact that
+the gender distribution is almost equal shows that there is no gender
+bias in the data.Job roles skew towards technology and media, indicating
+a focus on these sectors.Most employees rate their work-life balance as
+good or excellent; This indicates high satisfaction; however, job
+satisfaction varies, with some rating it as low or medium.Performance
+ratings are mostly average, indicating a need for better performance
+management.The fact that most employees have not received any promotions
+highlights potential career development issues.Overtime is rare,
+indicating manageable workloads.Education levels vary, and many have
+bachelor's degrees.Marital status indicates more married workers.Job
+levels are mostly entry and intermediate, indicating a younger
+workforce.Company size is evenly distributed, indicating different
+operational scales.The rarity of remote work points to traditional
+office culture.Limited leadership and innovation opportunities suggest
+areas for development.The company's reputation is mostly good, but
+employee recognition is low to moderate, indicating room for
+improvement.
+
+```{r data_catdist}
+# Categorical variables distribution
+par(mfrow = c(3, 5),  mar = c(5, 4, 2, 2) + 0.1) 
+for (cat_var in categoric_var_names[-16]) {
+  barplot(table(data[[cat_var]]), main=paste(cat_var), 
+          ylab="Count", col="firebrick4", cex.names=0.7, las=2, 
+          cex.main=0.9, cex.axis=0.8)
 }
-
-# Categorical value distribution -- barplot
-par(mfrow = c(2, 3))  
-for (cat_var in categoric_var_names) {
-  barplot(table(data[[cat_var]]), main=paste(cat_var, "Distribution"), xlab=cat_var, col="firebrick4")
-}
-
 ```
 
 ```{r, include=FALSE}
 par(mfrow = c(1, 1)) 
 ```
 
-### Target Values
+5.  Numerical Values Distribution
 
-```{r target}
+Inferences from the histograms for the numerical variables: The age
+distribution is fairly uniform, indicating a wide age range among
+employees.The years at the company show a right-skewed distribution,
+with most employees having shorter tenures and fewer employees staying
+beyond 30 years.Monthly income has a roughly normal distribution,
+peaking around 5,000 to 10,000 units, suggesting that most employees
+earn within this range.The distance from home distribution is relatively
+uniform, indicating that employees live at various distances from their
+workplace.
+
+```{r data_numdist}
+# Numerical variables distribution
+par(mfrow = c(3, 2), mar=c(3, 3, 2, 1))
+for (num_var in numeric_var_names) {
+  hist(data[[num_var]], main=paste(num_var),
+       xlab="", ylab="", col="firebrick4", breaks=30, 
+       cex.main=0.8, cex.axis=0.8, cex.lab=0.8)
+}
+```
+
+6.  Target Value Distribution
+
+The pie chart depicting attrition distribution shows that 47.5% of
+employees left the company, while 52.5% stayed. This indicates a
+relatively balanced split between those who left and those who remained.
+Such a near-equal distribution suggests that significant turnover,
+highlighting the need for strategies to improve retention. Understanding
+the factors contributing to attrition could help in developing targeted
+initiatives to retain employees and enhance overall workforce stability.
+
+```{r data_targetdist, out.width="75%"}
 
 # Target value distribution
 par(mfrow = c(1, 2)) 
 barplot(table(data$Attrition), main="Attrition Count", xlab="Attrition", ylab="Count", col=c("firebrick4", "rosybrown2"))
 
-# Target value distribution -- Pie chart
+# Target values distribution with pie chart
 attrition_table <- table(data$Attrition)
 attrition_df <- as.data.frame(attrition_table)
 colnames(attrition_df) <- c("Attrition", "Count")
 attrition_df$Percentage <- round(100 * attrition_df$Count / sum(attrition_df$Count), 1)
-
-pie(attrition_df$Count, labels=paste(attrition_df$Attrition, " - ", attrition_df$Percentage, "%"), 
-    col=c("firebrick4","rosybrown2"),
-    main="Attrition Distribution", cex=1.2, radius=0.8)
- 
+pie(attrition_df$Count, labels=paste(attrition_df$Attrition, " - ",
+attrition_df$Percentage, "%"),
+col=c("firebrick4","rosybrown2"),
+main="Attrition Distribution", cex=1.5, radius=1)
 ```
 
-```{r, include=FALSE}
-par(mfrow = c(1, 1)) 
-```
+7.  Outlier Analysis
 
-### Numeric Features
+The second boxplots show the relationship between attrition and various
+numerical variables: There are more outliers for longer tenures among
+employees who stayed, suggesting that employees who remain with the
+company for extended periods are less likely to leave. Monthly income
+distributions are almost equal for both groups, but there are more
+high-income outliers among those who left.This suggests that while
+average income may not differ much between those who left and stayed,
+higher earners are more likely to leave. Attrition appears to be more
+closely linked with tenure at the company and, to some extent, with the
+distribution of high-income outliers. Shorter tenures are associated
+with higher attrition rates, and while income levels are generally
+similar for those who leave and stay, the presence of high-income
+outliers among those who leave suggests that other factors, such as job
+satisfaction or career development opportunities, might be influencing
+their decision to leave.
 
-```{r num_f}
-
-numeric_var_names <- names(data)[numeric_vars]
-
-# Copy Data
-data_detailed<- data
-
-# Define bins for numeric values
-data_detailed$Age_Cat <- cut(data_detailed$Age, breaks = c(18, 25, 35, 45, 55, 60), labels = c("18-25", "25-35", "35-45", "45-55", "55-60"), right = FALSE)
-data_detailed$MonthlyIncome_Cat <- cut(data_detailed$Monthly.Income, breaks = c(0, 3000, 6000, 9000, 12000, 15000,18000), labels = c("0-3000", "3000-6000", "6000-9000", "9000-12000", "12000-15000","15000+"), right = FALSE)
-data_detailed$DistanceFromHome_Cat <- cut(data_detailed$Distance.from.Home, breaks = c(0, 20, 40, 60, 80, 100), labels = c("0-20", "20-40", "40-60", "60-80", "80-100"), right = FALSE)
-data_detailed$YearsAtCompany_Cat <- cut(data_detailed$Years.at.Company, breaks = c(0, 10, 20, 30, 40, 50,60), labels = c("0-10", "10-20", "20-30", "30-40", "40-50","50-60"), right = FALSE)
-
-
-
-exclude_columns <- c("Age", "Monthly.Income", "Distance.from.Home", "Years.at.Company", "Attrition")
-data_corr <- data_detailed[, !names(data_detailed) %in% exclude_columns]
-data_corr <- data_corr[, c(setdiff(names(data_corr), "Attrition"))]
-
-# Plotting with target feature after transform numeric features into categorical
-par(mfrow = c(3, 4))  
-for (col in setdiff(names(data_detailed), exclude_columns)) {
-  table_left <- table(data_detailed[data_detailed$Attrition == "Left", col])
-  table_stayed <- table(data_detailed[data_detailed$Attrition == "Stayed", col])
-  
-  barplot(rbind(table_left, table_stayed), beside = TRUE,
-          main = paste(col, "Distribution by Attrition"),
-          xlab = col,
-          col = c("firebrick4", "rosybrown2"))
+```{r data_outlier, out.width="80%"}
+# Boxplot of outliers
+par(mfrow = c(2, 3))  
+for (num_var in numeric_var_names) {
+  boxplot(data[[num_var]], main=paste(num_var), 
+          xlab="", col="firebrick4",horizontal = TRUE)
 }
-```
-
-```{r, include=FALSE}
-par(mfrow = c(1, 1))
-```
-
-### Outliers
-
-```{r target-num}
-
-# Target Visualization with Numeric features Outlier Check -- boxplot
+# Boxplots of numeric variables by Attrition
 cat_var <- "Attrition"
-
-plots_per_page <- 6
-num_plots <- length(numeric_var_names)
-num_pages <- ceiling(num_plots / plots_per_page)
-plot_index <- 1
-for (page in 1:num_pages) {
-  par(mfrow = c(2, 3))  
-  for (i in 1:plots_per_page) {
-    if (plot_index > num_plots) break
-    num_var <- numeric_var_names[plot_index]
-    boxplot(data[[num_var]] ~ data[[cat_var]], main=paste(num_var, "\nby", cat_var), xlab=cat_var, ylab=num_var, col=c("firebrick4","rosybrown2"))
-    plot_index <- plot_index + 1
-  }
+par(mfrow = c(2, 3), mar = c(5, 3, 3, 2) + 0.1, 
+    cex.main = 1, cex.lab = 0.9, cex.axis = 0.9)  
+for (num_var in numeric_var_names) {
+  boxplot(data[[num_var]] ~ data[[cat_var]], main=paste(num_var, "by Attrition"), 
+          xlab="", ylab="", col=c("firebrick4", "rosybrown2"), horizontal = TRUE, 
+          names = c("Left", "Stayed"))
 }
 ```
-
 ```{r, include=FALSE}
-par(mfrow = c(1, 1))
+par(mfrow = c(1, 1))  
 ```
 
-```{r}
+
+```{r outliers}
+# Function to count outliers using IQR
+count_outliers <- function(x) {
+  Q1 <- quantile(x, 0.25, na.rm = TRUE)
+  Q3 <- quantile(x, 0.75, na.rm = TRUE)
+  IQR <- Q3 - Q1
+  outliers <- x[x < (Q1 - 1.5 * IQR) | x > (Q3 + 1.5 * IQR)]
+  return(length(outliers))}
+# Identify and count outliers for each numeric variable
+outlier_counts <- list()
+for (var in numeric_var_names) {
+  outlier_count <- count_outliers(data[[var]])
+  outlier_counts[[var]] <- outlier_count
+  cat("\nNumber of outliers in", var, ":", outlier_count, "\n")}
 # Function to identify outliers using IQR
 identify_outliers <- function(x) {
   Q1 <- quantile(x, 0.25, na.rm = TRUE)
   Q3 <- quantile(x, 0.75, na.rm = TRUE)
   IQR <- Q3 - Q1
-  outliers <- x[x < (Q1 - 1.5 * IQR) | x > (Q3 + 1.5 * IQR)]
-  return(outliers)
-}
+  outliers <- which(x < (Q1 - 1.5 * IQR) | x > (Q3 + 1.5 * IQR))  # Return indices
+  return(outliers)}
+```
 
-# Identify and show outliers for each numeric variable
+
+In methodology we used to identify and remove outlier employs the
+Interquartile Range (IQR).The IQR method was used because it is simple
+and effective. It focuses on the central 50% of the data, making it less
+sensitive to extreme values. It works by calculating the range between
+the first quartile (Q1) and third quartile (Q3) and identifying outliers
+as values falling below Q1 - 1.5 \* IQR or above Q3 + 1.5 \* IQR.
+
+Functions are used to count outliers and identify their indices for each
+numeric variable, subsequently removing rows with outliers to create a
+non-outlier dataset. Despite this rigorous process, removing outliers
+did not enhance the model's performance and instead decreased its
+accuracy. This indicates that the outliers contain valuable information
+crucial for the model's predictive power. Consequently, it was decided
+to retain the outliers in the dataset, preserving model accuracy and
+ensuring effective predictive performance.
+
+```{r data_outlier2, echo=TRUE, results='hide'}
+# Identify and show outliers for each numeric variable and combine them into single vector
 outliers_list <- list()
+all_outlier_indices <- c()
 for (var in numeric_var_names) {
   outliers <- identify_outliers(data[[var]])
   outliers_list[[var]] <- outliers
-  cat("\nOutlier values in", var, "are between:\n")
-  print(sort(unique(outliers)))
+  all_outlier_indices <- c(all_outlier_indices, outliers)
+  cat("\nOutliers in", var, ":\n")
+  print(outliers)
+}
+
+all_outlier_indices <- unique(all_outlier_indices)
+```
+
+```{r data_outlier3}
+# Remove rows with outliers 
+data_nonoutlier <- data[-all_outlier_indices, ]
+# Print the number of rows removed and the resulting data
+cat("\nTotal number of rows removed:", length(all_outlier_indices), "\n")
+cat("Original dataset rows:", nrow(data), "\n")
+cat("Non-outlier dataset rows:", nrow(data_nonoutlier), "\n")
+```
+
+8.  Transforming Numerical Variables into Categorical Variables
+
+This methodology effectively transforms continuous numeric variables
+into categorical bins, facilitating better visualization and comparative
+analysis of attrition. The use of bar charts to compare the
+distributions of these categories between employees who left and those
+who stayed provides clear insights into how different factors may
+influence employee turnover.
+
+Employees who do not work overtime tend to stay more than those who
+leave, indicating that excessive work hours may contribute to higher
+attrition rates. Married employees are less likely to leave compared to
+single employees, suggesting that marital status influences retention.
+Remote work and higher job levels are associated with lower attrition,
+emphasizing the value of flexibility and career growth opportunities. A
+good company reputation and recognition also correlate with lower
+attrition, highlighting the importance of a positive work environment
+and employee appreciation. The distribution across education levels,
+number of dependents, and distance from home shows similar patterns for
+both those who left and stayed, suggesting these factors have a moderate
+impact on turnover. Understanding these patterns helps in developing
+targeted strategies to improve employee satisfaction and reduce turnover
+rates.
+
+```{r data_transform}
+# Define bins for numerical variables
+data_detailed$Age_Cat <- cut(data_detailed$Age, breaks = c(18, 25, 35, 45, 55, 60), 
+labels = c("18-25", "25-35", "35-45", "45-55", "55-60"), right = FALSE)
+data_detailed$MonthlyIncome_Cat <- cut(data_detailed$Monthly.Income, 
+breaks = c(0, 3000, 6000, 9000, 12000, 15000,18000), labels = c("0-3000", "3000-6000", "6000-9000", "9000-12000", "12000-15000","15000+"), right = FALSE)
+data_detailed$DistanceFromHome_Cat <- cut(data_detailed$Distance.from.Home, 
+breaks = c(0, 20, 40, 60, 80, 100), 
+labels = c("0-20", "20-40", "40-60", "60-80", "80-100"), right = FALSE)
+data_detailed$YearsAtCompany_Cat <- cut(data_detailed$Years.at.Company, 
+breaks = c(0, 10, 20, 30, 40, 50,60), 
+labels = c("0-10", "10-20", "20-30", "30-40", "40-50","50-60"), right = FALSE)
+
+# Exclude numerical columns
+exclude_columns <- c("Age", "Monthly.Income", "Distance.from.Home", "Years.at.Company", "Attrition")
+exclude_columns1 <- c("Age", "Monthly.Income", "Distance.from.Home", "Years.at.Company")
+# Create data for correlation matrix
+data_corr <- data_detailed[, !names(data_detailed) %in% exclude_columns1]
+data_corr <- data_corr[, c(setdiff(names(data_corr), "Attrition"), "Attrition")]
+
+# Plotting with target feature after transform numerical variables into categorical
+par(mfrow = c(4,6),  mar = c(3, 3, 2, 2) + 0.1) 
+for (col in setdiff(names(data_detailed), exclude_columns)) {
+  table_left <- table(data_detailed[data_detailed$Attrition == "Left", col])
+  table_stayed <- table(data_detailed[data_detailed$Attrition == "Stayed", col])
+  barplot(rbind(table_left, table_stayed), beside = TRUE,
+          main = paste(col),
+          xlab = "",
+          col = c("firebrick4", "rosybrown2"),
+          cex.names=0.9, cex.main=0.9, cex.axis=0.9)
 }
 ```
 
-```{r}
-# Plot histograms and highlight outliers
+9. Checking Correlation
 
-plot_index <- 1
-for (page in 1:num_pages) {
-  par(mfrow = c(2, 3))  
-  for (i in 1:plots_per_page) {
-    if (plot_index > num_plots) break
-    num_var <- numeric_var_names[plot_index]
-    
-    hist(data[[num_var]], main=paste(num_var, "Distribution"), xlab=num_var, col="firebrick4", breaks=30)
-    outliers <- outliers_list[[num_var]]
-    if (length(outliers) > 0) {
-      points(outliers, rep(0, length(outliers)), col="rosybrown2", pch=16)
-    }
-    
-    plot_index <- plot_index + 1
+In order to look at the correlation between variables and their effect
+on Attrition, ordinal and label encoding are used on categorical
+variables, followed by generating a correlation matrix and visualizing
+it.
+
+Ordinal mapping converts variables with inherent order, such as
+Work-Life Balance and Job Satisfaction, into numeric values to preserve
+their ordinal nature, enabling meaningful numerical analysis. Label
+encoding is applied to unordered categorical variables, converting them
+into numeric values necessary for numerical analyses.
+
+Additionally, numeric variables were converted to categorical bins
+previous code and then encoded to avoid issues related to large or small
+numeric values and to standardize the data format, ensuring consistency
+in the correlation analysis. By encoding the data, we aim to avoid
+disproportionate influence from large or small values and ensure each
+variable contributes equally to the analysis. The correlation matrix
+calculates pairwise correlation coefficients, helping to understand the
+linear relationships between variables. The correlation plot visually
+represents these relationships, using colors and numbers to indicate the
+strength and direction of correlations.So this process prepares the
+dataset for sophisticated analysis, aids in feature selection,
+identifies multicollinearity issues, and providing insights into complex
+variable relationships.
+
+However, it is important to note that this method may not capture the
+full complexity of relationships that exist in the original numeric
+data.
+
+```{r data_corr, out.width="75%"}
+# Ordinal mappings
+balance.map <- c('Poor'= 1, 'Fair'= 2, 'Good'= 3, 'Excellent'= 4)
+data_corr$Work.Life.Balance <- balance.map[as.character(data_corr$Work.Life.Balance)]
+
+satisfaction.map <- c('Low'= 1, 'Medium'= 2, 'High'= 3, 'Very High'= 4)
+data_corr$Job.Satisfaction <- satisfaction.map[as.character(data_corr$Job.Satisfaction)]
+
+performance.map <- c('Low'= 1, 'Below Average'= 2, 'Average'= 3, 'High'= 4)
+data_corr$Performance.Rating <- performance.map[as.character(data_corr$Performance.Rating)]
+
+level.map <- c('Entry'= 1, 'Mid'= 2, 'Senior'= 3)
+data_corr$Job.Level <- level.map[as.character(data_corr$Job.Level)]
+
+reputation.map <- c('Poor'= 1, 'Fair'= 2, 'Good'= 3, 'Excellent'= 4)
+data_corr$Company.Reputation <- reputation.map[as.character(data_corr$Company.Reputation)]
+
+recognition.map <- c('Low'= 1, 'Medium'= 2, 'High'= 3, 'Very High'= 4)
+data_corr$Employee.Recognition <- recognition.map[as.character(data_corr$Employee.Recognition)]
+
+size.map <- c('Small'= 1, 'Medium'= 2, 'Large'= 3)
+data_corr$Company.Size <- size.map[as.character(data_corr$Company.Size)]
+
+# Perform label encoding for the columns that are not mapped ordinally
+categoric_vars_enc <- sapply(data_corr, function(x) is.factor(x) || is.character(x))
+for (var in names(data_corr)[categoric_vars_enc]) {
+  if (!(var %in% c('Work.Life.Balance', 'Job.Satisfaction', 'Performance.Rating', 
+                   'Job.Level', 'Company.Reputation', 'Employee.Recognition', 'Company.Size'))) {
+    data_corr[[var]] <- as.numeric(factor(data_corr[[var]]))
   }
 }
+# Define cor matrix
+cor_matrix <- cor(data_corr)
+# Correlation plot
+corrplot(cor_matrix, 
+         method = 'color', type = "upper", tl.col = "black", 
+         tl.srt = 45, addCoef.col = "black", number.cex = 0.5, 
+         tl.cex = 0.5)  
 ```
 
-```{r, include=FALSE}
-par(mfrow = c(1, 1))
-```
+There is positive correlation between job role and monthly income
+(0.51), indicating that higher job roles (Media 4,Technology 5) are
+associated with higher incomes. Work-life balance shows a positive
+correlation with attrition (0.19), suggesting that employees with better
+work-life balance are more likely to stay.This emphasizes the importance
+of promoting a healthy work-life balance to reduce turnover rates. There
+is also a notable negative correlation between marital status and
+attrition (-0.23), indicating that married employees are less likely to
+leave the company. Remote work has a moderate negative correlation with
+attrition (-0.22), suggesting that employees who can work remotely are
+more likely to stay.The flexibility offered by remote work arrangements
+can be a significant factor in retaining employees, especially in the
+current global context where remote work has become more prevalent. Job
+level also shows a notable negative correlation with attrition (-0.32),
+implying that higher job levels are associated with lower attrition
+rates.This could be due to increased job satisfaction, responsibility,
+and rewards that come with higher-level positions, making employees more
+likely to stay. Additionally, there is a weak negative correlation
+between distance from home and attrition (-0.09), and a very weak
+positive correlation between years at the company and attrition (0.07).
+These insights highlight which factors are more strongly related to
+employee turnover, providing valuable information for developing
+targeted retention strategies.
 
-As a result of the analysis, the following observations were made
-regarding the characteristics of the data:
-
--   
-
--   
-
--   
-
--   
-
--   
-
--   
-
--   
-
-## Features vs. Target
-
-### Categorical Features vs. Target
-
-### Numerical Features vs. Target
-
-## Correlation Matrix
-
-```{r Cor.Cov.}
-# Cor. and Cov.
-cov_matrix <- cov(data[, numeric_var_names])
-cor_matrix <- cor(data[, numeric_var_names])
-
-print("Covariance Matrix:")
-print(cov_matrix)
-print("Correlation Matrix:")
-print(cor_matrix)
-
-corrplot(cor_matrix, method = 'number', type = "upper", tl.col = "black", tl.srt = 45)
-```
-
-### Partial Correlation Matrices
 
 # Data Preparation
 
@@ -434,39 +598,20 @@ convert categorical features to numeric (ordinal or nominal)
 representations.
 
 ```{r mapping}
-
 # Ordinal mappings:
-balance.map <- c('Poor'= 1, 'Fair'= 2, 'Good'= 3, 'Excellent'= 4)
 data$Work.Life.Balance <- balance.map[as.numeric(data$Work.Life.Balance)]
-
-satisfaction.map <- c('Low'= 1, 'Medium'= 2, 'High'= 3, 'Very High'= 4)
 data$Job.Satisfaction <- satisfaction.map[as.numeric(data$Job.Satisfaction)]
-
-performance.map <- c('Low'= 1, 'Below Average'= 2, 'Average'= 3, 'High'= 4)
 data$Performance.Rating <- performance.map[as.numeric(data$Performance.Rating)]
-
-level.map <- c('Entry'= 1, 'Mid'= 2, 'Senior'= 3)
 data$Job.Level <- level.map[as.numeric(data$Job.Level)]
-
-#education.map <- c('High School'= 1, 'Associate Degree'= 2, 'Bachelor’s Degree'= 3, 'Master’s Degree'= 4, 'PhD'= 5)
-#data$Education.Level <- education.map[as.numeric(data$Education.Level)]
-
-reputation.map <- c('Poor'= 1, 'Fair'= 2, 'Good'= 3, 'Excellent'= 4)
 data$Company.Reputation <- reputation.map[as.numeric(data$Company.Reputation)]
-
-recognition.map <- c('Low'= 1, 'Medium'= 2, 'High'= 3, 'Very High'= 4)
 data$Employee.Recognition <- recognition.map[as.numeric(data$Employee.Recognition)]
-
-size.map <- c('Small'= 1, 'Medium'= 2, 'Large'= 3)
 data$Company.Size <- size.map[as.numeric(data$Company.Size)]
 
 # Nominal mappings:
 # Create dummy variables for nominal data
 data_numeric <- model.matrix( ~ ., data = data) 
-
 # Convert the resulting matrix back to a data frame
-data_numeric <- as.data.frame(data_numeric)[,-1]  # -1 to remove the intercept column
-
+data_numeric <- as.data.frame(data_numeric)[,-1]  # -1 to remove the intercept
 ```
 
 ## Normalization
@@ -479,50 +624,48 @@ data_normalized <- as.data.frame(lapply(data_numeric, normalize))
 
 ## Train-Test-Split
 
-Before splitting the data into training and test, first features and
-target should be defined.
+```{r train_test_split}
+set.seed(123)
+trainIndex <- sample(1:nrow(data_normalized), 0.8*nrow(data_normalized))
+
+# 80% of data is used for training
+train.data <- data_normalized[trainIndex,]
+
+# 20% of data is used for testing
+test.data <- data_normalized[-trainIndex,]
+```
+
 
 ```{r x_y_split}
 # Splitting data into features and target:
-X <- data_normalized[, !(colnames(data_normalized) %in% c("Employee.ID", "AttritionStayed"))]
+X.train <- train.data[, !(colnames(data_normalized) %in% c("Employee.ID", "AttritionStayed"))]
+y.train <- train.data$AttritionStayed
 
-y <- data_normalized$AttritionStayed
+X.test <- test.data[, !(colnames(data_normalized) %in% c("Employee.ID", "AttritionStayed"))]
+y.test <- test.data$AttritionStayed
+
 ```
 
 Now, we can split the dataset for modelling.
-
-```{r train_test_split}
-set.seed(123)
-
-trainIndex <- sample(1:nrow(X), 0.8*nrow(X))
-
-# 80% of data is used for training
-X.train <- X[trainIndex,]
-y.train <- y[trainIndex]
-
-# 20% of data is used for testing
-X.test <- X[-trainIndex,]
-y.test <- y[-trainIndex]
-```
 
 Before moving to modelling step, it is beneficial to check the
 dimensions and balance of the datasets.
 
 -   Number of samples in train data: `r dim(X.train)[1]`
 
-    -   Proportion of stayed employees for train data:
-```{r}
-kable(prop.table(table(y.train)))
-```
-        
-
 -   Number of samples in test data: `r dim(X.test)[1]`
 
-    -   Proportion of stayed employees for test data:
+-   Proportion of stayed employees for train data:
+
+```{r}
+prop.table(table(y.train))
+```
+
+-   Proportion of stayed employees for test data:
+
 ```{r}
 prop.table(table(y.test))
 ```
-        
 
 We can observe that the train and test datasets are balanced within
 themselves. Also the train data is representative of test data.
@@ -548,7 +691,6 @@ performances.
 The logistic regression model estimates the odds of the dependent
 variable occurring and applies the logit (log-odds) transformation to
 express this relationship.
-
 
 ### Basic Logistic Classifier
 
@@ -588,10 +730,10 @@ R2
 ```
 
 With the full model the value of $R^2$ `r R2` indicates that
-approximately `r R2*100`% of the variance in the target can be explained by
-the features in the model. Since `r R2*100`% is relatively low, it suggests
-that the model is not capturing much of the underlying pattern in the
-data.
+approximately `r R2*100`% of the variance in the target can be explained
+by the features in the model. Since `r R2*100`% is relatively low, it
+suggests that the model is not capturing much of the underlying pattern
+in the data.
 
 Multicollinearity can be a reason for a low $R^2$ value, as it can make
 it difficult to determine the individual effect of each predictor on the
@@ -611,9 +753,9 @@ multicollinearity. A few variables have VIF values between 1 and 5,
 suggesting moderate multicollinearity, which may not pose serious issues
 but should be monitored. These variables include Job.RoleTechnology,
 Job.RoleHealthcare, Monthly.Income, Job.RoleFinance,
-Marital.StatusSingle and Marital.StatusMarried. These are mostly dummy features of nominal variables
-and dummy variables are often correlated because they represent
-categories of the same nominal variable.
+Marital.StatusSingle and Marital.StatusMarried. These are mostly dummy
+features of nominal variables and dummy variables are often correlated
+because they represent categories of the same nominal variable.
 
 ### Logistic Regression with Backward Stepwise Search
 
@@ -626,15 +768,15 @@ performance.
 We can use the step() function to perform backward stepwise search. As a
 regularization criteria we can either use BIC or AIC. But BIC statistic
 generally places a heavier penalty on models with many variables, and
-hence results in the selection of smaller models than AIC. 
+hence results in the selection of smaller models than AIC.
 
 ```{r step_back}
-# Backward Stepwise Search with AIC statistics
+# Backward Stepwise Search with BIC statistics
 glm.BACKWARD <- step(glm.FULL, direction="backward", k=log(nrow(X.train)), trace=0, steps=100)
 summary(glm.BACKWARD)
 
 vif.BACKWARD <- data.frame(features = names(vif(glm.BACKWARD)), VIF = vif(glm.BACKWARD),row.names = NULL)
-vif.BACKWARD[order(-vif.BACKWARD$VIF), ]
+head(vif.BACKWARD[order(-vif.BACKWARD$VIF), ], 10)
 ```
 
 It looks like backward stepwise search dropped "Job.RoleFinance",
@@ -644,8 +786,12 @@ so it seems logical. But oddly the model kept the "Job.RoleMedia"
 feature so this tells us that having a job role in Media may be more
 significant to employee Attrition than other job roles for this dataset.
 
-With backward feature selection we were able to decrease the VIF scores, p-values and AIC score.
-Although $R^2$ slightly decreased to `r 1 - (summary(glm.BACKWARD)$deviance/summary(glm.BACKWARD)$null.deviance)`, this is expectable since the number of features in the model decreased. But most importantly we decreased the variance inflation factor of the model so the model is more stable.
+With backward feature selection we were able to decrease the VIF scores,
+p-values and AIC score. Although $R^2$ slightly decreased to
+`r 1 - (summary(glm.BACKWARD)$deviance/summary(glm.BACKWARD)$null.deviance)`,
+this is expectable since the number of features in the model decreased.
+But most importantly we decreased the variance inflation factor of the
+model so the model is more stable.
 
 ### Logistic Regression with Shrinkage Method
 
@@ -736,24 +882,30 @@ legend("bottomright",legend=c("glm.FULL","glm.BACKWARD","glm.ELNET"),
 
 ```
 
-Although the AUC values are same, to better analyse the difference between the model performances we can
-calculate and compare the evaluation metrics.
-
+Although the AUC values are same, to better analyse the difference
+between the model performances we can calculate and compare the
+evaluation metrics.
 
 ```{r logreg_eval_func}
 # Function to evaluate prediction models at different thresholds
-evaluate.model.performance <- function(predictions, y.test, thresholds, title) {
+evaluate.model.performance <- function(predictions, y.test, thresholds=NULL) {
   output.list <- list()
-
-  # Looping through each threshold to generate predictions and store in output.list
-  for (threshold in thresholds) {
-    output <- ifelse(predictions > threshold, 1, 0)
-    output.list[[as.character(threshold)]] <- output
+  
+ if (!is.null(thresholds)) {
+    # Looping through each threshold to generate predictions and store in output.list
+    for (threshold in thresholds) {
+      output <- ifelse(predictions > threshold, 1, 0)
+      output.list[[as.character(threshold)]] <- output
+    }
+  } else {
+    # Use the given predictions directly if no thresholds are provided
+    output.list[["No Threshold"]] <- predictions
+    thresholds <- c("No Threshold")  # Create a single "threshold" for consistent processing
   }
 
   # Initialize a data frame to store the evaluation metrics for each threshold
   results <- data.frame(
-    Threshold = numeric(length(thresholds)),
+    Threshold = character(length(thresholds)),
     Accuracy = numeric(length(thresholds)),
     F1.Score = numeric(length(thresholds)),
     Precision = numeric(length(thresholds)),
@@ -779,8 +931,14 @@ evaluate.model.performance <- function(predictions, y.test, thresholds, title) {
   # Rounding results
   results[, c("Accuracy", "F1.Score", "Precision", "Recall")] <- round(results[, c("Accuracy", "F1.Score", "Precision", "Recall")], 4)
 
-  # Return the results table
-  kable(results, align = "c", caption = c("Performance Metrics",title))
+  # Conditionally adjust the output to remove the Threshold column if not needed
+  if (length(thresholds) == 1 && thresholds[1] == "No Threshold") {
+    results <- results[, -1]  # Remove the Threshold column
+    colnames(results) <- c("Accuracy", "F1.Score", "Precision", "Recall")
+    kable(results, align = "c")
+  } else {
+    kable(results, align = "c")
+  }
 }
 ```
 
@@ -788,32 +946,92 @@ evaluate.model.performance <- function(predictions, y.test, thresholds, title) {
 thresholds <- c(0.2, 0.3, 0.4, 0.5, 0.6)
 
 # 1. Basic Logistic Classifier
-evaluate.model.performance(glm.FULL.predict, y.test, thresholds, "glm.FULL")
+evaluate.model.performance(glm.FULL.predict, y.test, thresholds)
 
 # 2. Feature Selection with Backward Stepwise Search
-evaluate.model.performance(glm.BACKWARD.predict, y.test, thresholds, "glm.BACKWARD")
+evaluate.model.performance(glm.BACKWARD.predict, y.test, thresholds)
 
 # 3. Elastic Net Shrinkage Method
-evaluate.model.performance(glm.ELNET.predict, y.test, thresholds, "glm.ELNET")
+evaluate.model.performance(glm.ELNET.predict, y.test, thresholds)
 
 ```
 
 All of the models have the highest F1 score at threshold level 0.4. And
 F1 score with 0.4 threshold for glm.ELNET is higher than other models on
-the test set. These results indicate that the model with Elastic Net regularization is better in generalization. Therefore we can select the glm.ELNET.predict as the best prediction for logistic regression model.
+the test set. These results indicate that the model with Elastic Net
+regularization is better in generalization. Therefore we can select the
+glm.ELNET.predict as the best prediction for logistic regression model.
 
-## Another Classification Model
+## LDA & QDA
 
+Linear Discriminant Analysis (LDA) is a classification algorithm that finds a linear combination of features that best separates two or more classes. It assumes that the features follow a multivariate normal distribution with a common mean and variance for all classes. LDA and logistic classifier have the same (linear) form but LDA makes more assumptions about the underlying data then the logistic classifier. For the model we decided to exclude the features that had high VIF and p-values as analysed for logistic classifiers.
 
+```{r lda}
+# Perform LDA modelling on train data and make predictions on test data
+lda.model <- lda(AttritionStayed ~ .-Job.RoleFinance-Job.RoleTechnology -Job.RoleHealthcare -Monthly.Income -Education.LevelBachelor.s.Degree -Education.LevelHigh.School -Education.LevelMaster.s.Degree -Employee.Recognition, data = train.data)
+lda.model
 
+lda.predict <- predict(lda.model, newdata = test.data)$class
 
+# Evaluate the performance of the model
+evaluate.model.performance(lda.predict, y.test)
+```
 
+Quadratic Discriminant Analysis (QDA) is similar to LDA but allows for different mean and variance for each class. This results in quadratic decision boundaries.
 
+```{r}
+qda.model <- qda(AttritionStayed ~ .-Job.RoleFinance-Job.RoleTechnology -Job.RoleHealthcare -Monthly.Income -Education.LevelBachelor.s.Degree -Education.LevelHigh.School -Education.LevelMaster.s.Degree -Employee.Recognition, data = train.data)
+qda.predict <- predict(qda.model, newdata = test.data)$class
+qda.model
 
-
+evaluate.model.performance(qda.predict, y.test)
+```
 
 # Model Results
 
 ## Performance Metrics and Confusion Matrix
 
+
+
+```{r}
+# Function for confusion matrix and other performance metrics
+perf.measure <- function(true.values, pred.values,  lab.pos = 1){
+    # compute the confusion matrix and number of units
+  conf.matrix <- table(pred.values, true.values)
+  n <- sum(conf.matrix)
+  # force the label of positives to be a character string
+  lab.pos <- as.character(lab.pos)
+  # obtain the label of negatives
+  lab <- rownames(conf.matrix)
+  lab.neg <- lab[lab != lab.pos]
+  # extract relevant quantities from the confusion matrix
+  TP <- conf.matrix[lab.pos, lab.pos]
+  TN <- conf.matrix[lab.neg, lab.neg]
+  FP <- conf.matrix[lab.pos, lab.neg]
+  FN <- conf.matrix[lab.neg, lab.pos]
+  P     <- TP + FN
+  N     <- FP + TN
+  P.ast <- TP + FP
+  # compute the performance measures
+  OER <- (FP+FN)/n
+  PPV <- TP/P.ast
+  TPR <- TP/P
+  F1  <- 2*PPV*TPR/(PPV+TPR)
+  TNR <- TN/N
+  FPR <- FP/N
+  return(list(overall.ER = OER, PPV=PPV, TPR=TPR, F1=F1, TNR=TNR, FPR=FPR))
+}
+```
+
+```{r}
+# Confusion matrix for glm.ELNET
+
+# Use best threshold for prediction (0 or 1)
+Threshold <- 0.4
+glm.ELNET.predict.factor <- as.factor(ifelse(glm.ELNET.predict >= Threshold, 1, 0))
+
+
+#PM <- perf.measure(test.data$AttritionStayed, glm.ELNET.predict.factor, lab.pos = "Stayed")
+#PM
+```
 # Conclusion
